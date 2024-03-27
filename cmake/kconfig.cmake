@@ -1,6 +1,7 @@
 # This module should be included as high as possible in the main CMakeList.txt
 # as it populates variables RAYNGINE_* to be used by the project.
 
+include(CMakePrintHelpers)
 
 find_program(KCONFIG kconfig REQUIRED)
 
@@ -62,7 +63,9 @@ list(FILTER RAYNGINE_VARIABLES INCLUDE REGEX "RAYNGINE_.*")
 
 
 # Show results
-include(CMakePrintHelpers)
+message("")
+message(STATUS "\tKconfig results")
+message("")
 foreach (v IN LISTS RAYNGINE_VARIABLES)
 	cmake_print_variables(${v})
 endforeach()

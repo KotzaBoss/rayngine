@@ -11,7 +11,10 @@ include(kconfig)
 set(CMAKE_BUILD_TYPE ${RAYNGINE_BUILD_TYPE})
 
 include(odin)
-message(STATUS "Odin executable: ${ODIN}")
 
+add_subdirectory(src)
 add_subdirectory(bin)
 
+message("")
+message(STATUS "\tRun: cmake --build build -- rayngine")
+message("")

@@ -1,8 +1,11 @@
 package rayngine
 
 import rl "vendor:raylib"
+import "src:ecs"
 
 main :: proc() {
+	ecs.make()
+
 	rl.InitWindow(800, 450, "raylib [core] example - basic window")
 
     for !rl.WindowShouldClose() {

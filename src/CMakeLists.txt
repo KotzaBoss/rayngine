@@ -1,0 +1,6 @@
+add_custom_target(tests
+		WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+		COMMAND ${ODIN} test
+			${CMAKE_CURRENT_SOURCE_DIR}/ecs
+			${ODIN_DEFINES}
+	)

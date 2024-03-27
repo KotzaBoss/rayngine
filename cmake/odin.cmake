@@ -1,4 +1,5 @@
 include(FetchContent)
+include(CMakePrintHelpers)
 
 # Fetch Odin
 FetchContent_Declare(odin
@@ -8,16 +9,17 @@ FetchContent_Declare(odin
     )
 
 message("")
-message(STATUS "\tFetching Odin")
+message(STATUS "\tOdin")
 message("")
 
 FetchContent_MakeAvailable(odin)
 
-message(STATUS "Odin available: ${odin_SOURCE_DIR}")
+message(STATUS "Source dir: ${odin_SOURCE_DIR}")
 
 
 # Prepare odin executable
 set(ODIN ${odin_SOURCE_DIR}/odin CACHE PATH "Odin executable path")
+message(STATUS "Executable: ${ODIN}")
 
 # Only way i found to make sure odin is compiled once.
 # Other targets should `DEPEND odin`
@@ -45,9 +47,8 @@ endforeach()
 list(TRANSFORM ODIN_DEFINES PREPEND "-define:")
 
 
-# Debug output
-include(CMakePrintHelpers)
+message(STATUS "Odin definitions:")
 foreach (odin_define IN LISTS ODIN_DEFINES)
-	cmake_print_variables(odin_define)
+	message(STATUS "\t${odin_define}")
 endforeach()
 
