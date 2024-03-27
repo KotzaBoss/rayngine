@@ -1,0 +1,8 @@
+#
+# Automatically generated file; DO NOT EDIT.
+# Project Configuration
+#
+RAYNGINE_BUILD_DEBUG=y
+# RAYNGINE_BUILD_RELEASE is not set
+RAYNGINE_BUILD_TYPE="Debug"
+RAYNGINE_TEST=y
