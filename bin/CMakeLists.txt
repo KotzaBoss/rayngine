@@ -5,6 +5,7 @@ add_custom_target(rayngine
 			-collection:src=${PROJECT_SOURCE_DIR}/src
 			${ODIN_DEFINES}
 		DEPENDS odin
+		COMMENT "Building rayngine: ${CMAKE_CURRENT_BINARY_DIR}/rayngine"
 	)
 
 
