@@ -15,7 +15,7 @@ rnr*.json
 *.slo
 *.lo
 *.o
-*.obj
+#*.obj	# Overlaps with .obj models
 
 # Precompiled Headers
 *.gch
