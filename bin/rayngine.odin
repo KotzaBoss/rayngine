@@ -139,7 +139,8 @@ main :: proc() {
 	model_names: [dynamic]cstring
 
 	{
-		fd, ok1 := os.open("KayKit_Prototype_Bits_1.0_FREE/Assets/obj")
+		// TODO: Make a "paths" file for all the predefined paths
+		fd, ok1 := os.open("res/KayKit_Prototype_Bits_1.0")
 		defer os.close(fd)
 		assert(ok1 == 0)	// Is this idiomatic? what if multiplefunctions return the same error type?
 
