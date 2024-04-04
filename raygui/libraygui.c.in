@@ -1,0 +1,5 @@
+#define RAYGUI_IMPLEMENTATION
+#include <raygui.h>
+
+${gui_defines_includes}
+

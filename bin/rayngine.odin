@@ -11,6 +11,7 @@ import "core:mem"
 
 import rl "vendor:raylib"
 
+import rg "rayngine:raygui"
 
 Animation_State :: enum {
 	Idle,
@@ -158,6 +159,7 @@ main :: proc() {
 		direction = .Down
 	}
 
+	s := rg.InitGuiModelWindow()
     for !rl.WindowShouldClose() {
 		rl.UpdateCamera(&camera, .FREE)
 
@@ -305,17 +307,7 @@ main :: proc() {
 
 			rl.DrawText(text, 0, 0, 32, rl.BLACK)
 
-			{
-				@static scroll_index, active, focus: i32
-				rl.GuiListViewEx(
-					{10, 10, 500, 500},
-					transmute([^]cstring) &model_names[0],
-					auto_cast len(model_names),
-					&scroll_index,
-					&active,
-					&focus
-				)
-			}
+			rg.GuiModelWindow(&s)
 
         rl.EndDrawing()
     }
