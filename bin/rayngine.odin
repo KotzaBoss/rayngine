@@ -95,7 +95,7 @@ main :: proc() {
 	//////////////////////////////////////////////////////////////////////////////////
 
 
-	rl.InitWindow(1024, 768, "raylib [core] example - basic window")
+	rl.InitWindow(1280, 1024, "raylib [core] example - basic window")
 
 	models: [dynamic]rl.Model
 	model_names: [dynamic]cstring
@@ -160,6 +160,8 @@ main :: proc() {
 	}
 
 	s := rg.InitGuiModelWindow()
+	initial_content_rec := s.layoutRecs[1]
+
     for !rl.WindowShouldClose() {
 		rl.UpdateCamera(&camera, .FREE)
 
@@ -307,7 +309,35 @@ main :: proc() {
 
 			rl.DrawText(text, 0, 0, 32, rl.BLACK)
 
+			// Model Window
 			rg.GuiModelWindow(&s)
+			content_y_offset: f32 : 28
+			s.ModelScrollPanelContent = {
+				s.layoutRecs[1].x + 2,
+				s.layoutRecs[1].y + content_y_offset,
+				s.layoutRecs[1].width - f32(rl.GuiGetStyle(auto_cast rl.GuiControl.SCROLLBAR, auto_cast rl.GuiScrollBarProperty.SCROLL_SLIDER_SIZE)),
+				0
+			}
+
+			if (s.ModelWindowActive) {
+				font_size := f32(rl.GuiGetStyle(auto_cast rl.GuiControl.DEFAULT, auto_cast rl.GuiDefaultProperty.TEXT_SIZE))
+
+				rl.BeginScissorMode(auto_cast s.layoutRecs[1].x, auto_cast (s.layoutRecs[1].y + content_y_offset), auto_cast s.layoutRecs[1].width, auto_cast (s.layoutRecs[1].height - content_y_offset - 5))
+
+				for n, i in model_names {
+					rl.GuiLabelButton({
+							s.ModelScrollPanelContent.x,
+							s.ModelScrollPanelContent.y + s.ModelScrollPanelContent.height + s.ModelScrollPanelScrollOffset.y,
+							s.ModelScrollPanelContent.width,
+							font_size + 3,
+						},
+						n
+					)
+					s.ModelScrollPanelContent.height += font_size + 3
+				}
+
+				rl.EndScissorMode()
+			}
 
         rl.EndDrawing()
     }

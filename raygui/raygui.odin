@@ -9,6 +9,7 @@ GuiModelWindowState :: struct{
 	ModelWindowActive: bool,
 	ModelScrollPanelScrollView: rl.Rectangle,
 	ModelScrollPanelScrollOffset, ModelScrollPanelBoundsOffset: rl.Vector2,
+	ModelScrollPanelContent: rl.Rectangle,
 	layoutRecs: [2]rl.Rectangle,
 }
 
