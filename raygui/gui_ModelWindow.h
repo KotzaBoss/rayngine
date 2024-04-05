@@ -32,8 +32,11 @@
 
 typedef struct {
     bool ModelWindowActive;
+    Rectangle ModelScrollPanelScrollView;
+    Vector2 ModelScrollPanelScrollOffset;
+    Vector2 ModelScrollPanelBoundsOffset;
 
-    Rectangle layoutRecs[1];
+    Rectangle layoutRecs[2];
 
     // Custom state variables (depend on development software)
     // NOTE: This variables should be added manually if required
@@ -93,8 +96,12 @@ GuiModelWindowState InitGuiModelWindow(void)
     GuiModelWindowState state = { 0 };
 
     state.ModelWindowActive = true;
+    state.ModelScrollPanelScrollView = (Rectangle){ 0, 0, 0, 0 };
+    state.ModelScrollPanelScrollOffset = (Vector2){ 0, 0 };
+    state.ModelScrollPanelBoundsOffset = (Vector2){ 0, 0 };
 
-    state.layoutRecs[0] = (Rectangle){ 200, 72, 584, 408 };
+    state.layoutRecs[0] = (Rectangle){ 128, 72, 336, 200 };
+    state.layoutRecs[1] = (Rectangle){ 264, 96, 200, 176 };
 
     // Custom variables initialization
 
@@ -105,7 +112,8 @@ void GuiModelWindow(GuiModelWindowState *state)
 {
     if (state->ModelWindowActive)
     {
-        state->ModelWindowActive = !GuiWindowBox(state->layoutRecs[0], "SAMPLE TEXT");
+        state->ModelWindowActive = !GuiWindowBox(state->layoutRecs[0], "Models");
+        GuiScrollPanel((Rectangle){state->layoutRecs[1].x, state->layoutRecs[1].y, state->layoutRecs[1].width - state->ModelScrollPanelBoundsOffset.x, state->layoutRecs[1].height - state->ModelScrollPanelBoundsOffset.y }, "Models here ...", state->layoutRecs[1], &state->ModelScrollPanelScrollOffset, &state->ModelScrollPanelScrollView);
     }
 }
 

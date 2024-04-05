@@ -61,7 +61,10 @@ endforeach()
 file(COPY_FILE raygui.odin ${CMAKE_CURRENT_BINARY_DIR}/raygui.odin)
 
 
-# Prepare libraygui from gui_*.h files
+message("")
+message(STATUS "\tPreparing libraygui with gui_*.h files:")
+message("")
+
 file(GLOB guis RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "gui_*.h")
 foreach (gui.h ${guis})
 	# TODO: Confirm if we can have the glob equivalent so that we skip complicating with an extra regex step
@@ -69,6 +72,8 @@ foreach (gui.h ${guis})
 	string(REGEX MATCH ${regex} match ${gui.h})
 	if (NOT match)
 		message(FATAL_ERROR "Pattern ${regex} does not match file ${gui.h}")
+	else()
+		message(STATUS "${gui.h}")
 	endif()
 
 	cmake_path(GET gui.h STEM gui)

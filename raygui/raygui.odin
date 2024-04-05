@@ -7,7 +7,9 @@ foreign import gui "libraygui.a"
 
 GuiModelWindowState :: struct{
 	ModelWindowActive: bool,
-	layoutRecs: [1]rl.Rectangle
+	ModelScrollPanelScrollView: rl.Rectangle,
+	ModelScrollPanelScrollOffset, ModelScrollPanelBoundsOffset: rl.Vector2,
+	layoutRecs: [2]rl.Rectangle,
 }
 
 foreign gui {

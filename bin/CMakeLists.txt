@@ -1,6 +1,5 @@
-file(COPY_FILE rayngine.odin ${CMAKE_CURRENT_BINARY_DIR}/rayngine.odin)
-
 add_custom_target(rayngine
+	COMMAND cmake -E copy ${CMAKE_CURRENT_SOURCE_DIR}/rayngine.odin ${CMAKE_CURRENT_BINARY_DIR}
 		COMMAND ${ODIN} build
 			${CMAKE_CURRENT_BINARY_DIR}
 			-out:${CMAKE_CURRENT_BINARY_DIR}/rayngine

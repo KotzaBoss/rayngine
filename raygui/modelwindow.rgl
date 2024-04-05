@@ -1,0 +1,13 @@
+#
+# rgl layout text file (v4.0) - raygui layout file generated using rGuiLayout
+#
+# Number of controls:     2
+#
+# Ref. window:    r <x> <y> <width> <height>
+# Anchor info:    a <id> <name> <posx> <posy> <enabled>
+# Control info:   c <id> <type> <name> <rectangle> <anchor_id> <text>
+#
+r 0 40 -1 -1
+a 001 anchor01 40 32 1
+c 000 0 ModelWindow 88 40 336 200 1 Models
+c 001 20 ModelScrollPanel 224 64 200 176 1 Models here ...
