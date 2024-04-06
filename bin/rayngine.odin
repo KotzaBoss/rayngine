@@ -12,6 +12,7 @@ import "core:mem"
 import rl "vendor:raylib"
 
 import rg "rayngine:raygui"
+import shm "rayngine:spatial_hash_map"
 
 Animation_State :: enum {
 	Idle,
@@ -94,12 +95,10 @@ main :: proc() {
 
 	//////////////////////////////////////////////////////////////////////////////////
 
-
 	rl.InitWindow(1280, 1024, "raylib [core] example - basic window")
 
 	models: [dynamic]rl.Model
 	model_names: [dynamic]cstring
-
 	{
 		// TODO: Make a "paths" file for all the predefined paths
 		fd, ok1 := os.open("res/KayKit_Prototype_Bits_1.0")
@@ -133,17 +132,50 @@ main :: proc() {
 		delete(model_names)
 	}
 
-	dummy_rotation: f32
-	dummy: [dynamic]rl.Model
-	defer delete(dummy)
+	positions: [dynamic]rl.Vector3
+	{
+		batch :: 10
+		spacing_coeff :: 7.5
+		row: f32
+		col: f32
+		for i in 0..<len(models) {
+			if i % batch == 0 {
+				row += 1
+				col = 0
+			}
 
-	for n, i in model_names {
-		if strings.contains(auto_cast n, "Dummy") {
-			append(&dummy, models[i])	// why slice.last(...) doesnt work?
+			pos := rl.Vector3{row, 0, col} * spacing_coeff
+			append(&positions, pos)
+
+			col += 1
 		}
 	}
 
-	starting_camera_pos :: rl.Vector3{0, 10, 10}
+	// Initialize Spatial_Hash_Map
+	cell_size :: f32(8)
+	grid_map := shm.make(cstring, cell_size)
+	for soa in soa_zip(m=models[:], pos=positions[:], n=model_names[:]) {
+		bb := rl.GetModelBoundingBox(soa.m)
+		bb.min += soa.pos
+		bb.max += soa.pos
+		shm.add(&grid_map, bb, soa.n)
+	}
+
+	// Collect Dummy stuff
+	dummy_rotation: f32
+	dummy: [dynamic]rl.Model
+	dummy_names: [dynamic]cstring
+	defer delete(dummy)
+
+	for soa in soa_zip(m=models[:], n=model_names[:]) {
+		if strings.contains(auto_cast soa.n, "Dummy") {
+			append(&dummy, soa.m)	// why slice.last(...) doesnt work?
+			append(&dummy_names, soa.n)
+		}
+	}
+
+	// Raylib
+	starting_camera_pos :: rl.Vector3{0, 25, 25}
 	camera := rl.Camera3D{
 		position=starting_camera_pos,
 		target={0, 0, 0},
@@ -166,11 +198,21 @@ main :: proc() {
             rl.ClearBackground(rl.GRAY)
 
 			rl.BeginMode3D(camera)
-				rl.DrawGrid(100, 1.0)
+				rl.DrawGrid(100, cell_size)
 			rl.EndMode3D()
 
 
 			if rl.IsKeyPressed(.SPACE) do camera.position = starting_camera_pos
+
+			// Update player
+
+			//// For now "updating" the spatial map means, remove then (re) add
+			for zip in soa_zip(m=dummy[:], n=dummy_names[:]) {
+				bb := rl.GetModelBoundingBox(zip.m)
+				bb.min += player.pos
+				bb.max += player.pos
+				shm.remove(&grid_map, bb, zip.n)
+			}
 
 			{
 				prev_state := player.state
@@ -222,88 +264,59 @@ main :: proc() {
 				camera.target = player.pos
 			}
 
-
-			// Draw Models
-			{
-				batch :: 10
-				spacing_coeff :: 7.5
-
-				// Objects
-				{
-					row: f32
-					col: f32
-					rl.BeginMode3D(camera)
-						for model, i in models {
-							if i % batch == 0 {
-								row += 1
-								col = 0
-							}
-
-							pos := rl.Vector3{row, 0, col} * spacing_coeff
-							rl.DrawModel(model, pos, 1, rl.WHITE)
-
-							bb := rl.GetModelBoundingBox(model)
-							bb.min += pos
-							bb.max += pos
-							rl.DrawBoundingBox(bb, rl.RED)
-
-							col += 1
-						}
-					rl.EndMode3D()
-				}
-
-
-				// Names
-				{
-					font_size :: 12
-
-					row: f32
-					col: f32
-					for name, i in model_names {
-						if i % batch == 0 {
-							row += 1
-							col = 0
-						}
-
-						pos := rl.Vector3{row, 0, col} * spacing_coeff
-						center_2d := rl.GetWorldToScreen(pos + {0, 3, 0}, camera)
-
-						rl.DrawText(name, auto_cast center_2d.x - rl.MeasureText(name, font_size)/2, auto_cast center_2d.y, font_size, rl.BLACK)
-
-						col += 1
-					}
-				}
-
-				// Dummy
-				{
-					if rl.IsKeyDown(.E) do dummy_rotation += 5
-					else if rl.IsKeyDown(.Q) do dummy_rotation -= 5
-
-					rl.BeginMode3D(camera)
-						for m in dummy {
-							rl.DrawModelEx(m, player.pos, {0, 1, 0}, dummy_rotation, 1, rl.WHITE)
-							bb := rl.GetModelBoundingBox(m)
-							bb.min += player.pos
-							bb.max += player.pos
-							rl.DrawBoundingBox(bb, rl.RED)
-						}
-					rl.EndMode3D()
-				}
+			// (Re) add the dummy
+			for zip in soa_zip(m=dummy[:], n=dummy_names[:]) {
+				bb := rl.GetModelBoundingBox(zip.m)
+				bb.min += player.pos
+				bb.max += player.pos
+				shm.add(&grid_map, bb, zip.n)
 			}
 
+			rl.BeginMode3D(camera)
+				for zip in soa_zip(model=models[:], pos=positions[:]) {
+					rl.DrawModel(zip.model, zip.pos, 1, rl.WHITE)
 
-			// Draw "Center"
-			center_2d := rl.GetWorldToScreen({0, 0, 0} + {0.0, 1, 0.0}, camera)
-			rl.DrawText("Center", auto_cast center_2d.x - rl.MeasureText("Center", 32)/2, auto_cast center_2d.y, 32, rl.BLACK)
+					bb := rl.GetModelBoundingBox(zip.model)
+					bb.min += zip.pos
+					bb.max += zip.pos
+					rl.DrawBoundingBox(bb, rl.RED)
+				}
+			rl.EndMode3D()
 
+			// Draw model names
+			font_size :: 12
+			for zip in soa_zip(pos=positions[:], name=model_names[:]) {
+				center_2d := rl.GetWorldToScreen(zip.pos + {0, 3, 0}, camera)
 
-			// Draw UI
-			// TODO: Propably can avoid an allocation if we restrict the format of the position
-			//       For example 4 digits + 2 precision
-			text := fmt.caprintf("{}", player.pos)
-			defer delete(text)
+				rl.DrawText(zip.name, auto_cast center_2d.x - rl.MeasureText(zip.name, font_size)/2, auto_cast center_2d.y, font_size, rl.BLACK)
+			}
 
-			rl.DrawText(text, 0, 0, 32, rl.BLACK)
+			// Dummy
+			if rl.IsKeyDown(.E) do dummy_rotation += 5
+			else if rl.IsKeyDown(.Q) do dummy_rotation -= 5
+
+			rl.BeginMode3D(camera)
+				for m in dummy {
+					rl.DrawModelEx(m, player.pos, {0, 1, 0}, dummy_rotation, 1, rl.WHITE)
+					bb := rl.GetModelBoundingBox(m)
+					bb.min += player.pos
+					bb.max += player.pos
+					rl.DrawBoundingBox(bb, rl.RED)
+				}
+			rl.EndMode3D()
+
+			// Visualize spatial map
+			shm.gui(grid_map, camera)
+
+			// Draw instructions
+			instruction_font_size :: i32(30)
+			x_offset :: i32(7)
+			y_offset :: i32(5)
+			rl.DrawText("WASD to move",          x_offset, y_offset,                             instruction_font_size, rl.BLACK)
+			rl.DrawText("SPACE to reset camera", x_offset, y_offset + instruction_font_size,     instruction_font_size, rl.BLACK)
+			rl.DrawText("QR to rotate (buggy)",  x_offset, y_offset + 2 * instruction_font_size, instruction_font_size, rl.BLACK)
+			rl.DrawText("",                      x_offset, y_offset + 3 * instruction_font_size, instruction_font_size, rl.BLACK)
+			rl.DrawText(rl.TextFormat("Cell size = {}", cell_size), x_offset, y_offset + 4 * instruction_font_size, instruction_font_size, rl.BLACK)
 
         rl.EndDrawing()
     }

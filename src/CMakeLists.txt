@@ -11,6 +11,9 @@ endforeach()
 
 # Individual tests: test_some_package
 foreach (pkg ${pkgs})
+	# Copy packages to make odin import "rayngine:some_package" work
+	file(COPY ${CMAKE_CURRENT_SOURCE_DIR}/${pkg} DESTINATION ${CMAKE_BINARY_DIR})
+
 	add_custom_target(test_${pkg}
 			WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
 			COMMAND ${ODIN} test

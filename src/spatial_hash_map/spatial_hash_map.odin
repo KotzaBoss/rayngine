@@ -6,14 +6,19 @@ import "core:slice"
 
 import rl "vendor:raylib"
 
+// TODO: Change the signatures to accept pos: rl.Vector3, bb: rl.BoundingBox
+//       And essentially change the use of the current bb to:
+//
+//       grid_bb := { bb.min + pos, bb.max + pos }
+//
 
 Spatial_Grid_Map :: struct($Entity: typeid) {
-	cell_size: uint,
+	cell_size: f32,
 	grid: map[rl.Vector3][dynamic]Entity
 }
 
 
-make :: proc($Entity: typeid, cell_size: uint) -> Spatial_Grid_Map(Entity) {
+make :: proc($Entity: typeid, cell_size: f32) -> Spatial_Grid_Map(Entity) {
 	return {
 		cell_size,
 		{},
@@ -111,7 +116,7 @@ count :: proc(m: ^Spatial_Grid_Map($Entity), bb: rl.BoundingBox, e: Entity) -> u
 }
 
 
-bounding_box_of_overlapping_cells :: proc(cell_size: uint, bb: rl.BoundingBox) -> rl.BoundingBox {
+bounding_box_of_overlapping_cells :: proc(cell_size: f32, bb: rl.BoundingBox) -> rl.BoundingBox {
 	assert(cell_size > 0)
 
 	hashed := bb
