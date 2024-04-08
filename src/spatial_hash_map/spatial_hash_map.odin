@@ -4,6 +4,8 @@ import "core:fmt"
 import "core:math"
 import "core:slice"
 
+import "base:builtin"
+
 import rl "vendor:raylib"
 
 // TODO: Change the signatures to accept pos: rl.Vector3, bb: rl.BoundingBox
@@ -25,6 +27,10 @@ make :: proc($Entity: typeid, cell_size: f32) -> Spatial_Grid_Map(Entity) {
 	}
 }
 
+delete :: proc(m: ^Spatial_Grid_Map($Entity)) {
+	for _, v in m.grid do builtin.delete(v)
+	builtin.delete(m.grid)
+}
 
 add :: proc(m: ^Spatial_Grid_Map($Entity), bb: rl.BoundingBox, e: Entity) {
 	assert(m.cell_size > 0)

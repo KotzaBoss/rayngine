@@ -133,6 +133,7 @@ main :: proc() {
 	}
 
 	positions: [dynamic]rl.Vector3
+	defer delete(positions)
 	{
 		batch :: 10
 		spacing_coeff :: 7.5
@@ -154,6 +155,8 @@ main :: proc() {
 	// Initialize Spatial_Hash_Map
 	cell_size :: f32(8)
 	grid_map := shm.make(cstring, cell_size)
+	defer shm.delete(&grid_map)
+
 	for soa in soa_zip(m=models[:], pos=positions[:], n=model_names[:]) {
 		bb := rl.GetModelBoundingBox(soa.m)
 		bb.min += soa.pos
@@ -165,7 +168,10 @@ main :: proc() {
 	dummy_rotation: f32
 	dummy: [dynamic]rl.Model
 	dummy_names: [dynamic]cstring
-	defer delete(dummy)
+	defer {
+		delete(dummy)
+		delete(dummy_names)
+	}
 
 	for soa in soa_zip(m=models[:], n=model_names[:]) {
 		if strings.contains(auto_cast soa.n, "Dummy") {
