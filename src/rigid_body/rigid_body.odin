@@ -181,7 +181,7 @@ draw :: proc(t: ^testing.T) {
 		cube_size: rl.Vector3,
 	}
 
-	entt := Entity{rigid_body={ {0, 0, 0}, {10, 0, 0} }, cube_size={10, 10, 10}}
+	entt := Entity{rigid_body={ {10, 0, 0}, {10, 0, 0} }, cube_size={10, 10, 10}}
 
 	entt_center_clicked := false
 
@@ -206,6 +206,7 @@ draw :: proc(t: ^testing.T) {
 
 		rl.ClearBackground(rl.DARKGRAY)
 		rl.BeginMode3D(camera)
+			rl.DrawSphere({0, 0, 0}, 1, rl.BLACK)
 			rl.DrawGrid(100, 10)
 
 			rl.DrawCubeV(entt.rigid_body.position, entt.cube_size, rl.GRAY)
