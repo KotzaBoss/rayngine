@@ -88,7 +88,7 @@ gui :: proc(rb: Rigid_Body, camera: rl.Camera, dt: f32 /* Should we read it or b
 		mouse_pos := rl.GetMousePosition()
 		mouse_ray := rl.GetMouseRay(mouse_pos, camera)
 
-		axis_component_under_mouse := click_drag(rb, mouse_ray)
+		axis_component_under_mouse := check_mouse_collision_with_axes_and_draw_bounding_boxes(rb, mouse_ray)
 		rl.EndMode3D()
 
 		if rl.IsMouseButtonPressed(.LEFT) {
@@ -116,7 +116,7 @@ gui :: proc(rb: Rigid_Body, camera: rl.Camera, dt: f32 /* Should we read it or b
 
 
 @private
-click_drag :: proc(rb: Rigid_Body, mouse_ray: rl.Ray) -> (component: Axis_Component) {
+check_mouse_collision_with_axes_and_draw_bounding_boxes :: proc(rb: Rigid_Body, mouse_ray: rl.Ray) -> (component: Axis_Component) {
 	sphere_collision := rl.GetRayCollisionSphere(mouse_ray, rb.position, axis_center_radius)
 
 	if sphere_collision.hit {
