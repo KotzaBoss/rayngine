@@ -52,13 +52,11 @@ gui :: proc(rb: Rigid_Body, camera: rl.Camera, dt: f32 /* Should we read it or b
 		rl.ClearBackground(rl.BLANK)
 
 		rl.BeginMode3D(camera)
-
 			// Center
 			rl.DrawSphere(rb.position, axis_center_radius, rl.WHITE)
 
 
 			// Axis
-			// TODO: Can we partially use .X .Y .Z for the axes?
 			for axis in axes {
 				// Cylinder
 				axis_end := rb.position + axis_component_masks[axis] * axis_cylinder_length_scale
@@ -79,18 +77,19 @@ gui :: proc(rb: Rigid_Body, camera: rl.Camera, dt: f32 /* Should we read it or b
 					)
 			}
 
-		rl.EndMode3D()
 
+		// Prepare return value
 		projection := rb
 
 
 		// Click and drag
+		@static dragged_component: Axis_Component
+
 		mouse_pos := rl.GetMousePosition()
 		mouse_ray := rl.GetMouseRay(mouse_pos, camera)
 
-		@static dragged_component: Axis_Component
-
-		axis_component_under_mouse := click_drag(rb, mouse_ray, camera)
+		axis_component_under_mouse := click_drag(rb, mouse_ray)
+		rl.EndMode3D()
 
 		if rl.IsMouseButtonPressed(.LEFT) {
 			assert(dragged_component == .None)
@@ -110,7 +109,6 @@ gui :: proc(rb: Rigid_Body, camera: rl.Camera, dt: f32 /* Should we read it or b
 		else if rl.IsMouseButtonReleased(.LEFT) && dragged_component != .None {
 			dragged_component = .None
 		}
-
 	rl.EndTextureMode()
 
 	return projection
@@ -118,9 +116,7 @@ gui :: proc(rb: Rigid_Body, camera: rl.Camera, dt: f32 /* Should we read it or b
 
 
 @private
-click_drag :: proc(rb: Rigid_Body, mouse_ray: rl.Ray, camera: rl.Camera) -> (component: Axis_Component) {
-	rl.BeginMode3D(camera)
-
+click_drag :: proc(rb: Rigid_Body, mouse_ray: rl.Ray) -> (component: Axis_Component) {
 	sphere_collision := rl.GetRayCollisionSphere(mouse_ray, rb.position, axis_center_radius)
 
 	if sphere_collision.hit {
@@ -142,8 +138,6 @@ click_drag :: proc(rb: Rigid_Body, mouse_ray: rl.Ray, camera: rl.Camera) -> (com
 			break
 		}
 	}
-
-	rl.EndMode3D()
 
 	return
 }
