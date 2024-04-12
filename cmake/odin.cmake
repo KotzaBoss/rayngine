@@ -1,10 +1,9 @@
-include(FetchContent)
 include(CMakePrintHelpers)
 
 # Fetch Odin
 FetchContent_Declare(odin
-		GIT_REPOSITORY https://github.com/odin-lang/Odin
-        GIT_TAG master
+		GIT_REPOSITORY https://github.com/KotzaBoss/Odin
+        GIT_TAG set-clip-plane
 		EXCLUDE_FROM_ALL
     )
 
@@ -16,7 +15,6 @@ FetchContent_MakeAvailable(odin)
 
 message(STATUS "Source dir: ${odin_SOURCE_DIR}")
 
-
 # Prepare odin executable
 set(ODIN ${odin_SOURCE_DIR}/odin CACHE PATH "Odin executable path")
 message(STATUS "Executable: ${ODIN}")
@@ -27,7 +25,11 @@ add_custom_target(odin DEPENDS ${ODIN})
 add_custom_command(
 		WORKING_DIRECTORY ${odin_SOURCE_DIR}
 		OUTPUT ${ODIN}
+		COMMAND ${CMAKE_COMMAND} -E copy_if_different
+			$<TARGET_LINKER_FILE:raylib>
+			${odin_SOURCE_DIR}/vendor/raylib/linux
 		COMMAND ./build_odin.sh
+		VERBATIM
 		COMMENT "Building odin, this should be done once"
 	)
 
