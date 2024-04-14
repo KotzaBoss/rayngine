@@ -3,7 +3,7 @@ include(CMakePrintHelpers)
 # Fetch Odin
 FetchContent_Declare(odin
 		GIT_REPOSITORY https://github.com/KotzaBoss/Odin
-        GIT_TAG set-clip-plane
+        GIT_TAG camera-speed
 		EXCLUDE_FROM_ALL
     )
 
@@ -25,6 +25,7 @@ add_custom_target(odin DEPENDS ${ODIN})
 add_custom_command(
 		WORKING_DIRECTORY ${odin_SOURCE_DIR}
 		OUTPUT ${ODIN}
+		DEPENDS raylib
 		COMMAND ${CMAKE_COMMAND} -E copy_if_different
 			$<TARGET_LINKER_FILE:raylib>
 			${odin_SOURCE_DIR}/vendor/raylib/linux

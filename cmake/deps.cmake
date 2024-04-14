@@ -4,7 +4,7 @@ set(FETCHCONTENT_QUIET OFF)
 
 FetchContent_Declare(raylib
 		GIT_REPOSITORY git@github.com:KotzaBoss/raylib.git
-		GIT_TAG  clip-distance-variable
+		GIT_TAG  camera-speed
 		EXCLUDE_FROM_ALL
 	)
 
