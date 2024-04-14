@@ -45,83 +45,97 @@ axes :: []Axis_Component{ .X, .Y, .Z }
 
 
 // TODO: Draw reference axis at some corner of the screen, propably should be a separate raylib util
-gui :: proc(rb: Rigid_Body, camera: rl.Camera, dt: f32 /* Should we read it or be passed in? */, tex: rl.RenderTexture) -> Rigid_Body {
+gui :: proc(
+		rb: Rigid_Body,
+		camera: rl.Camera,
+		dt: f32 /* Should we read it or be passed in? */,
+		tex: rl.RenderTexture,
+		activation_key: rl.KeyboardKey = .KEY_NULL	// Default value means always
+	) -> (projection: Rigid_Body)
+{
 	assert(rl.IsWindowReady())
 
+	projection = rb
+
+	// Everything will be drawn onto the texture
 	rl.BeginTextureMode(tex)
-		rl.ClearBackground(rl.BLANK)
+	defer rl.EndTextureMode()
 
-		rl.BeginMode3D(camera)
-			// Center
-			rl.DrawSphere(rb.position, axis_center_radius, rl.WHITE)
+	rl.ClearBackground(rl.BLANK)
 
+	@static dragged_component: Axis_Component
 
-			// Axis
-			for axis in axes {
-				// Cylinder
-				axis_end := rb.position + axis_component_masks[axis] * axis_cylinder_length_scale
-				rl.DrawCylinderEx(
-						rb.position, axis_end,
-						axis_cylinder_thickness, axis_cylinder_thickness,
-						axis_cylinder_slices,
-						axis_colors[axis]
-					)
+	if !rl.IsKeyDown(activation_key) {
+		dragged_component = .None
+		return
+	}
 
-				// "Arrow"
-				tip_end := axis_end + arrow_tip_offsets[axis]
-				rl.DrawCylinderEx(
-						axis_end, tip_end,
-						axis_cylinder_thickness + 1, 0,
-						axis_cylinder_slices,
-						axis_colors[axis]
-					)
-			}
+	rl.BeginMode3D(camera)
+		// Center
+		rl.DrawSphere(rb.position, axis_center_radius, rl.WHITE)
 
 
-		// Prepare return value
-		projection := rb
+		// Axis
+		for axis in axes {
+			// Cylinder
+			axis_end := rb.position + axis_component_masks[axis] * axis_cylinder_length_scale
+			rl.DrawCylinderEx(
+					rb.position, axis_end,
+					axis_cylinder_thickness, axis_cylinder_thickness,
+					axis_cylinder_slices,
+					axis_colors[axis]
+				)
 
-
-		// Click and drag
-		@static dragged_component: Axis_Component
-
-		mouse_pos := rl.GetMousePosition()
-		mouse_ray := rl.GetScreenToWorldRay(mouse_pos, camera)
-
-		axis_component_under_mouse := check_mouse_collision_with_axes_and_draw_bounding_boxes(rb, mouse_ray)
-		rl.EndMode3D()
-
-		if rl.IsMouseButtonPressed(.LEFT) {
-			assert(dragged_component == .None)
-			dragged_component = axis_component_under_mouse
+			// "Arrow"
+			tip_end := axis_end + arrow_tip_offsets[axis]
+			rl.DrawCylinderEx(
+					axis_end, tip_end,
+					axis_cylinder_thickness + 1, 0,
+					axis_cylinder_slices,
+					axis_colors[axis]
+				)
 		}
-		else if rl.IsMouseButtonDown(.LEFT) && dragged_component != .None {
-			draw_click_drag_ui(mouse_pos, dragged_component)
+	rl.EndMode3D()
 
-			#partial switch dragged_component {
-				case .Center:
-				case .X, .Y, .Z:
-					projection.position += axis_component_masks[dragged_component] * rl.GetMouseDelta().x
-				case:
-					panic("Should not be here if we are not dragging")
-			}
-		}
-		else if rl.IsMouseButtonReleased(.LEFT) && dragged_component != .None {
-			dragged_component = .None
-		}
-	rl.EndTextureMode()
+	// Click and drag
+	mouse_pos := rl.GetMousePosition()
+	mouse_ray := rl.GetScreenToWorldRay(mouse_pos, camera)
 
-	return projection
+	axis_component_under_mouse := check_mouse_collision_with_axes_and_draw_bounding_boxes(rb, mouse_ray, camera)
+
+	if rl.IsMouseButtonPressed(.LEFT) {
+		assert(dragged_component == .None)
+		dragged_component = axis_component_under_mouse
+	}
+	else if rl.IsMouseButtonDown(.LEFT) && dragged_component != .None {
+		draw_click_drag_ui(mouse_pos, dragged_component)
+
+		#partial switch dragged_component {
+			case .Center:
+			case .X, .Y, .Z:
+				projection.position += axis_component_masks[dragged_component] * rl.GetMouseDelta().x
+			case:
+				panic("Should not be here if we are not dragging")
+		}
+	}
+	else if rl.IsMouseButtonReleased(.LEFT) && dragged_component != .None {
+		dragged_component = .None
+	}
+
+	return
 }
 
 
 @private
-check_mouse_collision_with_axes_and_draw_bounding_boxes :: proc(rb: Rigid_Body, mouse_ray: rl.Ray) -> (component: Axis_Component) {
+check_mouse_collision_with_axes_and_draw_bounding_boxes :: proc(rb: Rigid_Body, mouse_ray: rl.Ray, camera: rl.Camera) -> Axis_Component {
+	rl.BeginMode3D(camera)
+	defer rl.EndMode3D()
+
 	sphere_collision := rl.GetRayCollisionSphere(mouse_ray, rb.position, axis_center_radius)
 
 	if sphere_collision.hit {
 		rl.DrawSphereWires(rb.position, axis_center_radius + 1, 3, 6, rl.WHITE)
-		component = .Center
+		return .Center
 	}
 
 	for axis in axes {
@@ -134,12 +148,11 @@ check_mouse_collision_with_axes_and_draw_bounding_boxes :: proc(rb: Rigid_Body, 
 		axis_collision := rl.GetRayCollisionBox(mouse_ray, bb)
 		if axis_collision.hit {
 			rl.DrawBoundingBox(bb, axis_colors[axis])
-			component = axis
-			break
+			return axis
 		}
 	}
 
-	return
+	return .None
 }
 
 
@@ -198,7 +211,7 @@ draw :: proc(t: ^testing.T) {
 	foreground := rl.LoadRenderTexture(rl.GetScreenWidth(), rl.GetScreenHeight())
 
 	for !rl.WindowShouldClose() {
-		entt.rigid_body = gui(entt.rigid_body, camera, rl.GetFrameTime(), foreground)
+		entt.rigid_body = gui(entt.rigid_body, camera, rl.GetFrameTime(), foreground, activation_key=.LEFT_ALT)
 
 		rl.BeginDrawing()
 
