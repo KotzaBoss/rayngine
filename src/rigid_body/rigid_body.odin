@@ -101,7 +101,7 @@ gui :: proc(
 	mouse_pos := rl.GetMousePosition()
 	mouse_ray := rl.GetScreenToWorldRay(mouse_pos, camera)
 
-	axis_component_under_mouse := check_mouse_collision_with_axes_and_draw_bounding_boxes(rb, mouse_ray, camera)
+	axis_component_under_mouse := draw_axis_bounding_boxes_and_check_mouse_collision(rb, mouse_ray, camera)
 
 	if rl.IsMouseButtonPressed(.LEFT) {
 		assert(dragged_component == .None)
@@ -127,7 +127,7 @@ gui :: proc(
 
 
 @private
-check_mouse_collision_with_axes_and_draw_bounding_boxes :: proc(rb: Rigid_Body, mouse_ray: rl.Ray, camera: rl.Camera) -> Axis_Component {
+draw_axis_bounding_boxes_and_check_mouse_collision :: proc(rb: Rigid_Body, mouse_ray: rl.Ray, camera: rl.Camera) -> Axis_Component {
 	rl.BeginMode3D(camera)
 	defer rl.EndMode3D()
 
