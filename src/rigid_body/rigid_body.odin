@@ -227,6 +227,8 @@ draw :: proc(t: ^testing.T) {
 
 		rl.DrawTextureRec(foreground.texture, {0, 0, auto_cast rl.GetScreenWidth(), auto_cast -rl.GetScreenHeight()}, {0, 0}, rl.WHITE)
 
+		rl.DrawText("Press LEFT_ALT to activate rigid_body gui mode", 10, 10, 42, rl.WHITE)
+
 		rl.EndDrawing()
 	}
 
