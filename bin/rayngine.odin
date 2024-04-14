@@ -13,6 +13,7 @@ import rl "vendor:raylib"
 
 import rg "rayngine:raygui"
 import shm "rayngine:spatial_hash_map"
+import rb "rayngine:rigid_body"
 
 Animation_State :: enum {
 	Idle,
@@ -61,10 +62,25 @@ position_offsets := [Animation_Direction]rl.Vector3 {
 }
 
 
-Player :: struct {
-	pos: rl.Vector3,
-	state: Animation_State,
-	direction: Animation_Direction
+// Third person camera
+//
+// WASD: Move
+// Alt + mouse: Rotate
+// Scroll: Zoom
+//
+update_camera :: proc(camera: ^rl.Camera, move_speed: f32, rotation_speed: f32, scroll_speed: f32) {
+	if rl.IsKeyDown(.W) do rl.CameraMoveForward(camera,  move_speed, moveInWorldPlane=true);
+	if rl.IsKeyDown(.A) do rl.CameraMoveRight(camera,   -move_speed, moveInWorldPlane=true);
+	if rl.IsKeyDown(.S) do rl.CameraMoveForward(camera, -move_speed, moveInWorldPlane=true);
+	if rl.IsKeyDown(.D) do rl.CameraMoveRight(camera,    move_speed, moveInWorldPlane=true);
+
+	if rl.IsMouseButtonDown(.MIDDLE) {
+		delta := rl.GetMouseDelta() * rotation_speed
+		rl.CameraYaw(camera, delta.x, rotateAroundTarget=true)
+		rl.CameraPitch(camera, delta.y, lockView=true, rotateAroundTarget=true, rotateUp=false)
+	}
+
+	rl.CameraMoveToTarget(camera, -rl.GetMouseWheelMove() * scroll_speed)
 }
 
 
@@ -97,8 +113,18 @@ main :: proc() {
 
 	rl.InitWindow(1280, 1024, "raylib [core] example - basic window")
 
-	models: [dynamic]rl.Model
-	model_names: [dynamic]cstring
+	rl.rlSetClipPlanes(rl.RL_CULL_DISTANCE_NEAR, 6000)
+
+	Entity :: struct {
+		model: rl.Model,
+		name: string,
+		rigid_body: rb.Rigid_Body,
+	}
+
+	cell_size :: f32(500)
+	spatial_map := shm.make(string, cell_size)
+
+	entities: #soa [dynamic]Entity
 	{
 		// TODO: Make a "paths" file for all the predefined paths
 		fd, ok1 := os.open("res/Mini space pack")
@@ -111,111 +137,55 @@ main :: proc() {
 
 		files = slice.filter(files, proc(f: os.File_Info) -> bool { return filepath.ext(f.name) == ".glb" })
 
-		reserve(&models, len(files))
+		reserve_soa(&entities, len(files))
 
 		for f in files {
-			// No slice.transform(...)?
-			append(&model_names, strings.clone_to_cstring(f.name))
 
-			// TODO: how to work with such simple and fragmenting allocations
-			//       context.temp_allocator?
 			fullpath := strings.clone_to_cstring(f.fullpath)
 			defer delete(fullpath)
 
-			append(&models, rl.LoadModel(fullpath))
+			append_soa(&entities, Entity{rl.LoadModel(fullpath), f.name, {}})
+			// Add to spatial grid map
 		}
 	}
-	defer {
-		delete(models)
+	defer delete(entities)
 
-		for n in model_names do delete(n)
-		delete(model_names)
-	}
-
-	positions: [dynamic]rl.Vector3
-	defer delete(positions)
-	{
-		batch :: 10
-		spacing_coeff :: 200
-		row: f32
-		col: f32
-		for i in 0..<len(models) {
-			if i % batch == 0 {
-				row += 1
-				col = 0
-			}
-
-			pos := rl.Vector3{row, 0, col} * spacing_coeff
-			append(&positions, pos)
-
-			col += 1
-		}
-	}
-
-	// Initialize Spatial_Hash_Map
-	cell_size :: f32(500)
+	player := &entities[0]
 
 	// Raylib
-	starting_camera_pos :: rl.Vector3{0, 500, 500}
 	camera := rl.Camera3D{
-		position=starting_camera_pos,
-		target={0, 0, 0},
+		position=player.rigid_body.position + {0, 1000, 1000},
+		target=player.rigid_body.position,
 		up={0, 1, 0},
 		fovy=60.0,
 		projection=.PERSPECTIVE
 	}
 
-	rl.DisableCursor()
 	rl.SetTargetFPS(60)
 
-	player := Player {
-		direction = .Down
-	}
-
-
     for !rl.WindowShouldClose() {
-		rl.UpdateCamera(&camera, .THIRD_PERSON)
 
-		@static frames: uint
-		@static near: bool
-		frames += 1
-		rl.DrawText(rl.TextFormat("RL_CULL_DISTANCE_FAR = {}", rl.rlGetCullDistanceFar()), 0, 0, 32, rl.WHITE)
-		if frames > 60 {
-			if near {
-				rl.rlSetClipPlanes(rl.RL_CULL_DISTANCE_NEAR, rl.RL_CULL_DISTANCE_FAR)
-			}
-			else {
-				rl.rlSetClipPlanes(rl.RL_CULL_DISTANCE_NEAR, 5000.0)
-			}
-			frames = 0
-			near = !near
-
-		}
-
+		update_camera(&camera, 100, 0.01, 100)
 
         rl.BeginDrawing()
             rl.ClearBackground(rl.DARKGRAY)
 
 			rl.BeginMode3D(camera)
 				rl.DrawGrid(1000, cell_size)
-			rl.EndMode3D()
 
-			x: rl.Vector3 = 0.1
-			fmt.println(x)
+				rl.DrawLine3D({0, 0, 0}, {3000, 0, 0}, rl.RED)
+				rl.DrawLine3D({0, 0, 0}, {0, 3000, 0}, rl.GREEN)
+				rl.DrawLine3D({0, 0, 0}, {0, 0, 3000}, rl.BLUE)
+
+			rl.EndMode3D()
 
 			rl.BeginMode3D(camera)
-				for zip in soa_zip(model=models[:], pos=positions[:]) {
-					rl.DrawModelEx(zip.model, zip.pos, {1, 0, 0}, 90, 0.1, rl.WHITE)
+				for entt, i in entities {
+					rl.DrawModelEx(entt.model, {auto_cast i * 1000, 0, 0}, {1, 0, 0}, 90, 1, rl.WHITE)
 				}
+
+				rl.DrawModelEx(player.model, player.rigid_body.position, {1, 0, 0}, 90, 1, rl.RED)
 			rl.EndMode3D()
-
-			// Draw model names
-			font_size :: 12
-			for zip in soa_zip(pos=positions[:], name=model_names[:]) {
-				center_2d := rl.GetWorldToScreen(zip.pos + {0, 3, 0}, camera)
-
-				rl.DrawText(zip.name, auto_cast center_2d.x - rl.MeasureText(zip.name, font_size)/2, auto_cast center_2d.y, font_size, rl.BLACK)
-			}
 
         rl.EndDrawing()
     }
