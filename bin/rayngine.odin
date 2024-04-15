@@ -83,6 +83,33 @@ update_camera :: proc(camera: ^rl.Camera, move_speed: f32, rotation_speed: f32, 
 	rl.CameraMoveToTarget(camera, -rl.GetMouseWheelMove() * scroll_speed)
 }
 
+// Must be drawn towards the end to draw over the world
+drag_select :: proc() -> (selection: rl.Rectangle, active: bool) {
+	@static anchor: rl.Vector2
+
+	if rl.IsMouseButtonPressed(.LEFT) {
+		anchor = rl.GetMousePosition()
+	}
+	else if rl.IsMouseButtonDown(.LEFT) {
+		active = true
+
+		pos := rl.GetMousePosition()
+
+		selection = {
+			x = anchor.x,
+			y = anchor.y,
+			width = abs(pos.x - anchor.x),
+			height = abs(pos.y - anchor.y),
+		}
+
+		if pos.x < anchor.x do selection.x = pos.x
+		if pos.y < anchor.y do selection.y = pos.y
+
+		rl.DrawRectangleLinesEx(selection, 1, rl.BLUE)
+	}
+
+	return
+}
 
 main :: proc() {
 	// Track leaks: https://odin-lang.org/docs/overview/#when-statements
