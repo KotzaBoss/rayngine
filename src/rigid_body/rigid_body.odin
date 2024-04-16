@@ -9,8 +9,20 @@ import rl "vendor:raylib"
 
 Rigid_Body :: struct {
 	position: rl.Vector3,
+	transform: #row_major matrix[4, 4]f32,
 	velocity: rl.Vector3,
 }
+
+rotate :: proc(rb: ^Rigid_Body, x, y, z: f32) {
+	rb.transform *= rl.MatrixRotateXYZ({x, y, z})
+}
+
+move :: proc(rb: ^Rigid_Body, x, y, z: f32) {
+	rb.transform *= rl.MatrixTranslate(x, y, z)
+}
+
+
+/////////////////////////////////////// Gui
 
 
 Axis_Component :: enum {
@@ -42,7 +54,7 @@ axis_component_masks := [Axis_Component]rl.Vector3 {
 		.Center = {1, 1, 1},
 	}
 axes :: []Axis_Component{ .X, .Y, .Z }
-
+direction_length_scale :: 10
 
 // TODO: Draw reference axis at some corner of the screen, propably should be a separate raylib util
 gui :: proc(
@@ -92,9 +104,29 @@ gui :: proc(
 					axis_end, tip_end,
 					axis_cylinder_thickness + 1, 0,
 					axis_cylinder_slices,
-					axis_colors[axis]
+					axis_colors[axis],
 				)
 		}
+
+		// Direction
+		//{
+		//	direction_end := rb.position + rb.direction * direction_length_scale
+		//	rl.DrawCylinderEx(
+		//			rb.position, direction_end,
+		//			axis_cylinder_thickness, axis_cylinder_thickness,
+		//			axis_cylinder_slices,
+		//			rl.ORANGE
+		//		)
+
+		//	tip_end := direction_end + rb.direction * arrow_length
+		//	rl.DrawCylinderEx(
+		//			direction_end, tip_end,
+		//			axis_cylinder_thickness + 1, 0,
+		//			axis_cylinder_slices,
+		//			rl.ORANGE,
+		//		)
+		//}
+
 	rl.EndMode3D()
 
 	// Click and drag
@@ -191,10 +223,14 @@ draw :: proc(t: ^testing.T) {
 
 	Entity :: struct {
 		rigid_body: Rigid_Body,
-		cube_size: rl.Vector3,
+		model: rl.Model,
 	}
 
-	entt := Entity{rigid_body={ {10, 0, 0}, {10, 0, 0} }, cube_size={10, 10, 10}}
+	entt := Entity{
+			rigid_body={ {10, 0, 0}, rl.Matrix(1), {10, 0, 0} },
+			model=rl.LoadModelFromMesh(rl.GenMeshCube(10, 30, 90))
+		}
+	defer rl.UnloadModel(entt.model)
 
 	entt_center_clicked := false
 
@@ -211,7 +247,12 @@ draw :: proc(t: ^testing.T) {
 	foreground := rl.LoadRenderTexture(rl.GetScreenWidth(), rl.GetScreenHeight())
 
 	for !rl.WindowShouldClose() {
+
 		entt.rigid_body = gui(entt.rigid_body, camera, rl.GetFrameTime(), foreground, activation_key=.LEFT_ALT)
+
+		if rl.IsKeyDown(.A) do rotate(&entt.rigid_body, 0, 0.01, 0)
+		if rl.IsKeyDown(.D) do move(&entt.rigid_body, 0, 1, 0)
+		entt.model.transform = entt.rigid_body.transform
 
 		rl.BeginDrawing()
 
@@ -220,9 +261,20 @@ draw :: proc(t: ^testing.T) {
 			rl.DrawSphere({0, 0, 0}, 1, rl.BLACK)
 			rl.DrawGrid(100, 10)
 
-			rl.DrawCubeV(entt.rigid_body.position, entt.cube_size, rl.GRAY)
-			rl.DrawCubeWiresV(entt.rigid_body.position, entt.cube_size, rl.BLACK)
+			color := rl.WHITE
+			for i in 0..<entt.model.meshCount {
+				collision := rl.GetRayCollisionMesh(
+						rl.GetScreenToWorldRay(rl.GetMousePosition(), camera),
+						entt.model.meshes[i],
+						entt.model.transform * rl.MatrixTranslate(entt.rigid_body.position.x, entt.rigid_body.position.y, entt.rigid_body.position.z)
+					)
+				if collision.hit {
+					color = rl.RED
+				}
+			}
 
+			rl.DrawModel(entt.model, entt.rigid_body.position, 1, color)
+			rl.DrawModelWires(entt.model, entt.rigid_body.position, 1, rl.BLACK)
 		rl.EndMode3D()
 
 		rl.DrawTextureRec(foreground.texture, {0, 0, auto_cast rl.GetScreenWidth(), auto_cast -rl.GetScreenHeight()}, {0, 0}, rl.WHITE)
