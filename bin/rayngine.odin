@@ -1,6 +1,7 @@
 package rayngine
 
 import "core:math"
+import "core:math/linalg"
 import "core:log"	// Why doesnt it work?
 import "core:fmt"
 import "core:slice"
@@ -14,6 +15,7 @@ import rl "vendor:raylib"
 import rg "rayngine:raygui"
 import shm "rayngine:spatial_hash_map"
 import rb "rayngine:rigid_body"
+import "rayngine:ui"
 
 Animation_State :: enum {
 	Idle,
@@ -79,36 +81,10 @@ update_camera :: proc(camera: ^rl.Camera, move_speed: f32, rotation_speed: f32, 
 		rl.CameraYaw(camera, delta.x, rotateAroundTarget=true)
 		rl.CameraPitch(camera, delta.y, lockView=true, rotateAroundTarget=true, rotateUp=false)
 	}
+	else if rl.IsKeyDown(.Q) do rl.CameraYaw(camera, -rotation_speed, rotateAroundTarget=true)
+	else if rl.IsKeyDown(.E) do rl.CameraYaw(camera,  rotation_speed, rotateAroundTarget=true)
 
 	rl.CameraMoveToTarget(camera, -rl.GetMouseWheelMove() * scroll_speed)
-}
-
-// Must be drawn towards the end to draw over the world
-drag_select :: proc() -> (selection: rl.Rectangle, active: bool) {
-	@static anchor: rl.Vector2
-
-	if rl.IsMouseButtonPressed(.LEFT) {
-		anchor = rl.GetMousePosition()
-	}
-	else if rl.IsMouseButtonDown(.LEFT) {
-		active = true
-
-		pos := rl.GetMousePosition()
-
-		selection = {
-			x = anchor.x,
-			y = anchor.y,
-			width = abs(pos.x - anchor.x),
-			height = abs(pos.y - anchor.y),
-		}
-
-		if pos.x < anchor.x do selection.x = pos.x
-		if pos.y < anchor.y do selection.y = pos.y
-
-		rl.DrawRectangleLinesEx(selection, 1, rl.BLUE)
-	}
-
-	return
 }
 
 main :: proc() {
@@ -138,20 +114,21 @@ main :: proc() {
 
 	//////////////////////////////////////////////////////////////////////////////////
 
-	rl.InitWindow(1280, 1024, "raylib [core] example - basic window")
 
-	rl.rlSetClipPlanes(rl.RL_CULL_DISTANCE_NEAR, 6000)
+	rl.InitWindow(rl.GetScreenWidth(), rl.GetScreenHeight(), "raylib [core] example - basic window")
+
+	rl.rlSetClipPlanes(rl.RL_CULL_DISTANCE_NEAR, 100000)
 
 	Entity :: struct {
 		model: rl.Model,
 		name: string,
 		rigid_body: rb.Rigid_Body,
+		ui: ui.Entity
 	}
 
-	cell_size :: f32(500)
-	spatial_map := shm.make(string, cell_size)
+	entities := make_soa(#soa [dynamic]Entity, 0, 100)
+	entities.allocator = mem.panic_allocator()
 
-	entities: #soa [dynamic]Entity
 	{
 		// TODO: Make a "paths" file for all the predefined paths
 		fd, ok1 := os.open("res/Mini space pack")
@@ -164,25 +141,31 @@ main :: proc() {
 
 		files = slice.filter(files, proc(f: os.File_Info) -> bool { return filepath.ext(f.name) == ".glb" })
 
-		reserve_soa(&entities, len(files))
-
-		for f in files {
-
+		for f, i in files {
 			fullpath := strings.clone_to_cstring(f.fullpath)
 			defer delete(fullpath)
 
-			append_soa(&entities, Entity{rl.LoadModel(fullpath), f.name, {}})
-			// Add to spatial grid map
+			model := rl.LoadModel(fullpath)
+
+			append_soa(&entities, Entity{
+					model=model,
+					name=f.name,
+					rigid_body={ {auto_cast i * 2000, 0, 0}, {}, {} },
+					ui=ui.make(rl.GetModelBoundingBox(model), 25, 50)
+				})
 		}
 	}
-	defer delete(entities)
+	defer {
+		entities.allocator = context.allocator
+		delete(entities)
+	}
 
-	player := &entities[0]
+	_, _, e_rigid_bodies, e_uis := soa_unzip(entities[:])
 
 	// Raylib
 	camera := rl.Camera3D{
-		position=player.rigid_body.position + {0, 1000, 1000},
-		target=player.rigid_body.position,
+		position={0, 5000, 5000},
+		target=0,
 		up={0, 1, 0},
 		fovy=60.0,
 		projection=.PERSPECTIVE
@@ -192,27 +175,29 @@ main :: proc() {
 
     for !rl.WindowShouldClose() {
 
-		update_camera(&camera, 100, 0.01, 100)
+		update_camera(&camera, 100, 0.01, 500)
 
         rl.BeginDrawing()
             rl.ClearBackground(rl.DARKGRAY)
 
 			rl.BeginMode3D(camera)
-				rl.DrawGrid(1000, cell_size)
+				rl.DrawGrid(1000, 1000)
 
 				rl.DrawLine3D({0, 0, 0}, {3000, 0, 0}, rl.RED)
 				rl.DrawLine3D({0, 0, 0}, {0, 3000, 0}, rl.GREEN)
 				rl.DrawLine3D({0, 0, 0}, {0, 0, 3000}, rl.BLUE)
-
 			rl.EndMode3D()
 
-			rl.BeginMode3D(camera)
-				for entt, i in entities {
-					rl.DrawModelEx(entt.model, {auto_cast i * 1000, 0, 0}, {1, 0, 0}, 90, 1, rl.WHITE)
-				}
+			for &entt, i in entities {
+				rl.BeginMode3D(camera)
+					rl.DrawModel(entt.model, entt.rigid_body.position, 1, rl.WHITE)
+					rl.DrawModelWires(entt.model, entt.rigid_body.position, 1, rl.RED)
+				rl.EndMode3D()
+			}
 
-				rl.DrawModelEx(player.model, player.rigid_body.position, {1, 0, 0}, 90, 1, rl.RED)
-			rl.EndMode3D()
+			ui.gui(e_uis, e_rigid_bodies, camera, ui.drag_select())
+
+			rl.DrawFPS(10, 10)
 
         rl.EndDrawing()
     }
