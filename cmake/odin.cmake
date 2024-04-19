@@ -3,7 +3,7 @@ include(CMakePrintHelpers)
 # Fetch Odin
 FetchContent_Declare(odin
 		GIT_REPOSITORY https://github.com/KotzaBoss/Odin
-		GIT_TAG camera-bindings
+		GIT_TAG vector3-perpendicular
 		EXCLUDE_FROM_ALL
     )
 
