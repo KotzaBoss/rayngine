@@ -1,6 +1,6 @@
 package ecs
 
-make :: proc() {}
+import rl "vendor:raylib"
 
 
 ////////////////////////////////////////////

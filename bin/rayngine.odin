@@ -150,7 +150,11 @@ main :: proc() {
 			append_soa(&entities, Entity{
 					model=model,
 					name=f.name,
-					rigid_body={ {auto_cast i * 2000, 0, 0}, {}, {} },
+					rigid_body={
+							position = {auto_cast i * 2000, 0, 0},
+							rotation = {},
+							scale = 1
+						},
 					ui=ui.make(rl.GetModelBoundingBox(model), 25, 50)
 				})
 		}
@@ -190,8 +194,24 @@ main :: proc() {
 
 			for &entt, i in entities {
 				rl.BeginMode3D(camera)
+					entt.rigid_body.rotation += {0, 0.5, 0}
+					entt.model.transform = rb.rotation(entt.rigid_body)
 					rl.DrawModel(entt.model, entt.rigid_body.position, 1, rl.WHITE)
-					rl.DrawModelWires(entt.model, entt.rigid_body.position, 1, rl.RED)
+
+					collided := false
+					for mi in 0..<entt.model.meshCount {
+						collision := rl.GetRayCollisionMesh(
+								rl.GetScreenToWorldRay(rl.GetMousePosition(), camera),
+								entt.model.meshes[mi],
+								rb.transform(entt.rigid_body)
+							)
+						if collision.hit {
+							collided = true
+							break
+						}
+					}
+
+					rl.DrawSphereWires(entt.rigid_body.position, 500, 10, 10, rl.WHITE if !collided else rl.RED)
 				rl.EndMode3D()
 			}
 

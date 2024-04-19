@@ -1,26 +1,44 @@
 package rigid_body
 
+import "core:math"
 import "core:math/linalg"
 import "core:slice"
 import "core:fmt"
 
 import rl "vendor:raylib"
 
-
 Rigid_Body :: struct {
 	position: rl.Vector3,
-	transform: #row_major matrix[4, 4]f32,
-	velocity: rl.Vector3,
+	// Q: Change to quaternion and essentially use rl.Transform?
+	rotation: rl.Vector3,	// In degrees
+	scale: f32,
 }
 
-rotate :: proc(rb: ^Rigid_Body, x, y, z: f32) {
-	rb.transform *= rl.MatrixRotateXYZ({x, y, z})
+Transform :: #row_major matrix[4, 4]f32
+
+translation :: proc(rb: Rigid_Body) -> Transform {
+	return rl.MatrixTranslate(
+			rb.position.x,
+			rb.position.y,
+			rb.position.z
+		)
 }
 
-move :: proc(rb: ^Rigid_Body, x, y, z: f32) {
-	rb.transform *= rl.MatrixTranslate(x, y, z)
+rotation :: proc(rb: Rigid_Body) -> Transform {
+	return rl.MatrixRotateXYZ({
+			math.to_radians(rb.rotation.x),
+			math.to_radians(rb.rotation.y),
+			math.to_radians(rb.rotation.z),
+		})
 }
 
+scale :: proc(rb: Rigid_Body) -> Transform {
+	return rl.MatrixScale(rb.scale, rb.scale, rb.scale)
+}
+
+transform :: proc(rb: Rigid_Body) -> Transform {
+	return translation(rb) * rotation(rb) * scale(rb)
+}
 
 /////////////////////////////////////// Gui
 
@@ -227,7 +245,7 @@ draw :: proc(t: ^testing.T) {
 	}
 
 	entt := Entity{
-			rigid_body={ {10, 0, 0}, rl.Matrix(1), {10, 0, 0} },
+			rigid_body={ {0, 0, 0}, {}, 1 },
 			model=rl.LoadModelFromMesh(rl.GenMeshCube(10, 30, 90))
 		}
 	defer rl.UnloadModel(entt.model)
@@ -250,9 +268,9 @@ draw :: proc(t: ^testing.T) {
 
 		entt.rigid_body = gui(entt.rigid_body, camera, rl.GetFrameTime(), foreground, activation_key=.LEFT_ALT)
 
-		if rl.IsKeyDown(.A) do rotate(&entt.rigid_body, 0, 0.01, 0)
-		if rl.IsKeyDown(.D) do move(&entt.rigid_body, 0, 1, 0)
-		entt.model.transform = entt.rigid_body.transform
+		if rl.IsKeyDown(.A) do entt.rigid_body.rotation.y += 1
+		if rl.IsKeyDown(.D) do entt.rigid_body.position.y += 1
+		entt.model.transform = transform(entt.rigid_body)
 
 		rl.BeginDrawing()
 
@@ -261,12 +279,14 @@ draw :: proc(t: ^testing.T) {
 			rl.DrawSphere({0, 0, 0}, 1, rl.BLACK)
 			rl.DrawGrid(100, 10)
 
+			rl.DrawSphere(entt.rigid_body.position, 10, rl.BLUE)
+
 			color := rl.WHITE
 			for i in 0..<entt.model.meshCount {
 				collision := rl.GetRayCollisionMesh(
 						rl.GetScreenToWorldRay(rl.GetMousePosition(), camera),
 						entt.model.meshes[i],
-						entt.model.transform * rl.MatrixTranslate(entt.rigid_body.position.x, entt.rigid_body.position.y, entt.rigid_body.position.z)
+						entt.model.transform
 					)
 				if collision.hit {
 					color = rl.RED
@@ -280,6 +300,8 @@ draw :: proc(t: ^testing.T) {
 		rl.DrawTextureRec(foreground.texture, {0, 0, auto_cast rl.GetScreenWidth(), auto_cast -rl.GetScreenHeight()}, {0, 0}, rl.WHITE)
 
 		rl.DrawText("Press LEFT_ALT to activate rigid_body gui mode", 10, 10, 42, rl.WHITE)
+
+		rl.DrawText(rl.TextFormat("{}", transform(entt.rigid_body)), 0, 50, 42, rl.WHITE)
 
 		rl.EndDrawing()
 	}

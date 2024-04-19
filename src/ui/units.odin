@@ -65,16 +65,33 @@ gui :: proc(es: []Entity, rigid_bodies: []rb.Rigid_Body, camera: rl.Camera, sele
 		collision := rl.GetRayCollisionSphere(ray, soa.rb.position, soa.e.size)
 
 		color := rl.WHITE
-		//if collided {
-		if collision.hit {
+		if false {
+		//if collision.hit {
 			color = rl.RED
 		}
 
-		//rl.DrawCircleLinesV(screen_pos, scaled_rad, color)
+		//rl.BeginMode3D(camera)
+		{
+			//radius :: 500
 
-		rl.BeginMode3D(camera)
-		rl.DrawSphereWires(soa.rb.position, soa.e.size, 7, 7, color)
-		rl.EndMode3D()
+			//start := rl.Vector3{0, soa.e.size, 0} + soa.rb.position
+			//radius_point := start + {0, radius, 0}
+			//start = rl.Vector3Transform(start, soa.rb.transform)
+			//radius_point = rl.Vector3Transform(radius_point, soa.rb.transform)
+
+			//end := rl.Vector3{0, -soa.e.size, 0} + soa.rb.position
+			//end = rl.Vector3Transform(end, soa.rb.transform)
+
+			//start_2d := rl.GetWorldToScreen(start, camera)
+			//end_2d := rl.GetWorldToScreen(end, camera)
+
+			//radius_2d := linalg.distance(start_2d, end_2d)
+
+			//rl.DrawCircleLinesV(start_2d, radius_2d, color)
+			//rl.DrawCircleLinesV(end_2d, radius_2d, color)
+			//rl.DrawCapsuleWires(start + soa.rb.position, end + soa.rb.position, 500, 7, 7, color)
+		}
+		//rl.EndMode3D()
 
 		// Selection
 		if rl.CheckCollisionPointRec(screen_pos, selection) {
