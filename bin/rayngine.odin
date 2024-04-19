@@ -15,6 +15,9 @@ import rl "vendor:raylib"
 import rg "rayngine:raygui"
 import shm "rayngine:spatial_hash_map"
 import rb "rayngine:rigid_body"
+import ecs "rayngine:ecs"
+import rlu "rayngine:raylibutil"
+
 import "rayngine:ui"
 
 Animation_State :: enum {
@@ -119,14 +122,7 @@ main :: proc() {
 
 	rl.rlSetClipPlanes(rl.RL_CULL_DISTANCE_NEAR, 100000)
 
-	Entity :: struct {
-		model: rl.Model,
-		name: string,
-		rigid_body: rb.Rigid_Body,
-		ui: ui.Entity
-	}
-
-	entities := make_soa(#soa [dynamic]Entity, 0, 100)
+	entities := make_soa(#soa [dynamic]ecs.Entity, 0, 100)
 	entities.allocator = mem.panic_allocator()
 
 	{
@@ -147,14 +143,14 @@ main :: proc() {
 
 			model := rl.LoadModel(fullpath)
 
-			append_soa(&entities, Entity{
-					model=model,
+			append_soa(&entities, ecs.Entity{
 					name=f.name,
 					rigid_body={
 							position = {auto_cast i * 2000, 0, 0},
 							rotation = {},
 							scale = 1
 						},
+					model=model,
 					ui=ui.make(rl.GetModelBoundingBox(model), 25, 50)
 				})
 		}
@@ -164,7 +160,7 @@ main :: proc() {
 		delete(entities)
 	}
 
-	_, _, e_rigid_bodies, e_uis := soa_unzip(entities[:])
+	_, e_rigid_bodies, _, e_uis := soa_unzip(entities[:])
 
 	// Raylib
 	camera := rl.Camera3D{
@@ -195,23 +191,15 @@ main :: proc() {
 			for &entt, i in entities {
 				rl.BeginMode3D(camera)
 					entt.rigid_body.rotation += {0, 0.5, 0}
-					entt.model.transform = rb.rotation(entt.rigid_body)
-					rl.DrawModel(entt.model, entt.rigid_body.position, 1, rl.WHITE)
 
-					collided := false
-					for mi in 0..<entt.model.meshCount {
-						collision := rl.GetRayCollisionMesh(
-								rl.GetScreenToWorldRay(rl.GetMousePosition(), camera),
-								entt.model.meshes[mi],
-								rb.transform(entt.rigid_body)
-							)
-						if collision.hit {
-							collided = true
-							break
-						}
-					}
+					ecs.draw(&entt)
 
-					rl.DrawSphereWires(entt.rigid_body.position, 500, 10, 10, rl.WHITE if !collided else rl.RED)
+					rl.DrawSphereWires(
+							entt.rigid_body.position,
+							500,
+							10, 10,
+							rl.RED if ecs.collides(entt, rlu.mouse_ray(camera)) else rl.WHITE
+						)
 				rl.EndMode3D()
 			}
 

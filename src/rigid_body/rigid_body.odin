@@ -17,19 +17,13 @@ Rigid_Body :: struct {
 Transform :: #row_major matrix[4, 4]f32
 
 translation :: proc(rb: Rigid_Body) -> Transform {
-	return rl.MatrixTranslate(
-			rb.position.x,
-			rb.position.y,
-			rb.position.z
-		)
+	using rb
+	return rl.MatrixTranslate(position.x, position.y, position.z)
 }
 
 rotation :: proc(rb: Rigid_Body) -> Transform {
-	return rl.MatrixRotateXYZ({
-			math.to_radians(rb.rotation.x),
-			math.to_radians(rb.rotation.y),
-			math.to_radians(rb.rotation.z),
-		})
+	using rb
+	return rl.MatrixRotateXYZ({math.to_radians(rotation.x), math.to_radians(rotation.y), math.to_radians(rotation.z)})
 }
 
 scale :: proc(rb: Rigid_Body) -> Transform {
