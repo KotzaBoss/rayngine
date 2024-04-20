@@ -11,18 +11,16 @@ choice BUILD
 endchoice
 
 
+config VERBOSE
+	bool "Verbose"
+
+
 config BUILD_TYPE
 	# Omitting the prompt makes it invisible to the user
 	# and can be configured implicitely through other configs.
 	string
 	default "Debug" if BUILD_DEBUG
 	default "Release" if BUILD_RELEASE
-
-
-
-config TEST
-    bool "Build tests"
-    default y
 
 
 # Left as a comment if you need to remember the pattern

@@ -1,6 +1,8 @@
 include(FetchContent)
 
-set(FETCHCONTENT_QUIET ON)
+if (RAYNGINE_VERBOSE)
+	set(FETCHCONTENT_QUIET OFF)
+endif()
 
 FetchContent_Declare(raylib
 		GIT_REPOSITORY git@github.com:KotzaBoss/raylib.git
