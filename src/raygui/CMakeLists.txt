@@ -5,9 +5,7 @@ add_custom_target(rguilayout
 	)
 
 
-message("")
-message(STATUS "\tPreparing libraygui with gui_*.h files:")
-message("")
+section("Preparing libraygui with gui_*.h files:")
 
 file(GLOB guis RELATIVE ${CMAKE_CURRENT_SOURCE_DIR} "gui_*.h")
 foreach (gui.h ${guis})
@@ -17,7 +15,7 @@ foreach (gui.h ${guis})
 	if (NOT match)
 		message(FATAL_ERROR "Pattern ${regex} does not match file ${gui.h}")
 	else()
-		message(STATUS "${gui.h}")
+		m("${gui.h}")
 	endif()
 
 	cmake_path(GET gui.h STEM gui)

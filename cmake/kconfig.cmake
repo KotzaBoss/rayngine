@@ -33,9 +33,7 @@ elseif (NOT $CACHE{RAYNGINE_KCONFIG_HASH} STREQUAL kconfig_file_hash)
 endif()
 
 if (must_generate_default_config)
-	message("")
-	message(STATUS "\tGenerating default .config")
-	message("")
+	section("Generating default .config")
 
 	set(ENV{CONFIG_} ${CONFIG_})
 	execute_process(
@@ -45,8 +43,8 @@ if (must_generate_default_config)
 			COMMAND_ERROR_IS_FATAL ANY
 		)
 
-	message(STATUS "To customize use:")
-	message(STATUS "\tcmake --build ${PROJECT_BINARY_DIR} -- menuconfig")
+	m("To customize use:")
+	m("\tcmake --build ${PROJECT_BINARY_DIR} -- menuconfig")
 endif()
 
 
@@ -96,9 +94,7 @@ list(FILTER RAYNGINE_VARIABLES INCLUDE REGEX "RAYNGINE_.*")
 
 
 # Show results
-message("")
-message(STATUS "\tKconfig results")
-message("")
+section("Kconfig results")
 foreach (v IN LISTS RAYNGINE_VARIABLES)
 	cmake_print_variables(${v})
 endforeach()

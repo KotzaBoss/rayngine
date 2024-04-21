@@ -7,17 +7,15 @@ FetchContent_Declare(odin
 		EXCLUDE_FROM_ALL
     )
 
-message("")
-message(STATUS "\tOdin")
-message("")
+section("Odin")
 
 FetchContent_MakeAvailable(odin)
 
-message(STATUS "Source dir: ${odin_SOURCE_DIR}")
+m("Source dir: ${odin_SOURCE_DIR}")
 
 # Prepare odin executable
 set(ODIN ${odin_SOURCE_DIR}/odin CACHE PATH "Odin executable path")
-message(STATUS "Executable: ${ODIN}")
+m("Executable: ${ODIN}")
 
 # Only way i found to make sure odin is compiled once.
 # Other targets should `DEPEND odin`
@@ -61,8 +59,8 @@ list(APPEND ODIN_ARGS ${ODIN_DEFINES})
 
 
 # Report
-message(STATUS "Odin arguments:")
+m("Odin arguments:")
 foreach (odin_define IN LISTS ODIN_ARGS)
-	message(STATUS "\t${odin_define}")
+	m("\t${odin_define}")
 endforeach()
 

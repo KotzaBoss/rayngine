@@ -26,22 +26,18 @@ FetchContent_Declare(rguilayout
 	)
 
 
-message("")
-message(STATUS "\traylib technologies")
-message("")
+section("raylib technologies")
 
 FetchContent_MakeAvailable(raylib raygui rguilayout)
 
 
-message("")
-message(STATUS "\tglfw")
-message("")
+section("glfw")
 
 FetchContent_GetProperties(glfw)
 if (NOT glfw_POPULATED)
 	FetchContent_Populate(glfw)
 
-	message(STATUS "Tweaking build options (GLFW_USE_WAYLAND, GLFW_BUILD_WAYLAND/X11)")
+	m("Tweaking build options (GLFW_USE_WAYLAND, GLFW_BUILD_WAYLAND/X11)")
 	unset(GLFW_USE_WAYLAND CACHE)
 	set(GLFW_BUILD_WAYLAND ON)
 	set(GLFW_BUILD_X11 ON)
@@ -49,11 +45,6 @@ endif()
 
 
 # Report
-message("")
-message(STATUS "FetchContent report:")
-foreach (r raylib raygui rguilayout glfw)
-	message(STATUS "\t${r}:")
-	message(STATUS "\t\t${${r}_SOURCE_DIR}")
-	message(STATUS "\t\t${${r}_BINARY_DIR}")
-endforeach()
+section("FetchContent report:")
+m("Root directory: ${FETCHCONTENT_BASE_DIR}")
 
