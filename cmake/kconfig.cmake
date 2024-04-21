@@ -35,6 +35,7 @@ endif()
 if (must_generate_default_config)
 	message("")
 	message(STATUS "\tGenerating default .config")
+	message("")
 
 	set(ENV{CONFIG_} ${CONFIG_})
 	execute_process(

@@ -2,6 +2,11 @@ mainmenu "Project Configuration"
 
 comment "Do not neglect to confirm your changes have taken effect"
 
+
+config VERBOSE
+	bool "Verbose"
+
+
 choice BUILD
     prompt "Build type"
 
@@ -10,11 +15,6 @@ choice BUILD
     config BUILD_RELEASE
         bool "Release"
 endchoice
-
-
-config VERBOSE
-	bool "Verbose"
-
 
 config BUILD_TYPE
 	# Omitting the prompt makes it invisible to the user
