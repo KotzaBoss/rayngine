@@ -15,7 +15,6 @@ include(odin)
 
 add_subdirectory(src)
 add_subdirectory(bin)
-add_subdirectory(raygui)
 
 message("")
 message(STATUS "\tCommands:")

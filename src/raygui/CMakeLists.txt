@@ -1,5 +1,9 @@
-# Copy to make the imports work in the build directory
-file(COPY_FILE raygui.odin ${CMAKE_CURRENT_BINARY_DIR}/raygui.odin)
+add_custom_target(rguilayout
+		WORKING_DIRECTORY ${rguilayout_SOURCE_DIR}
+		COMMAND ./rguilayout
+		COMMENT "Launching rGuiLayout, see ${CMAKE_CURRENT_SOURCE_DIR}/README.md for more info"
+	)
+
 
 message("")
 message(STATUS "\tPreparing libraygui with gui_*.h files:")
@@ -31,12 +35,9 @@ endforeach()
 configure_file(libraygui.c.in libraygui.c)
 
 add_library(raygui STATIC libraygui.c $<TARGET_OBJECTS:raylib> $<TARGET_OBJECTS:glfw>)
-target_include_directories(raygui PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${raylib_SOURCE_DIR}/src ${raygui_SOURCE_DIR}/src)
-
-
-add_custom_target(rguilayout
-		WORKING_DIRECTORY ${rguilayout_SOURCE_DIR}
-		COMMAND ./rguilayout
-		COMMENT "Launching rGuiLayout, see ${CMAKE_CURRENT_SOURCE_DIR}/README.md for more info"
+target_include_directories(raygui PRIVATE
+		${CMAKE_CURRENT_SOURCE_DIR}
+		${raylib_SOURCE_DIR}/src
+		${raygui_SOURCE_DIR}/src
 	)
 

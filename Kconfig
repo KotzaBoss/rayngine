@@ -1,5 +1,6 @@
 mainmenu "Project Configuration"
 
+comment "Do not neglect to confirm your changes have taken effect"
 
 choice BUILD
     prompt "Build type"
@@ -21,6 +22,11 @@ config BUILD_TYPE
 	string
 	default "Debug" if BUILD_DEBUG
 	default "Release" if BUILD_RELEASE
+
+
+config ODIN_COLLECTION
+	string "Where is the -collection:rayngine"
+	default "${PROJECT_SOURCE_DIR}/src"
 
 
 # Left as a comment if you need to remember the pattern

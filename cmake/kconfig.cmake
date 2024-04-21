@@ -70,7 +70,7 @@ foreach (line IN LISTS config)
     # Ignore double quotes if any
     if (${value} MATCHES "^\"(.*)\"$")
 		set(type STRING)
-		set(value ${CMAKE_MATCH_1})
+		string(CONFIGURE ${CMAKE_MATCH_1} value)
 	elseif (${value} MATCHES "y|n")
 		set(type BOOL)
 	else()
