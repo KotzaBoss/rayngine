@@ -45,6 +45,6 @@ endif()
 
 
 # Report
-section("FetchContent report:")
+section("FetchContent report")
 m("Root directory: ${FETCHCONTENT_BASE_DIR}")
 
