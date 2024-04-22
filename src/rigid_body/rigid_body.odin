@@ -242,7 +242,6 @@ draw :: proc(t: ^testing.T) {
 			rigid_body={ {0, 0, 0}, {}, 1 },
 			model=rl.LoadModelFromMesh(rl.GenMeshCube(10, 30, 90))
 		}
-	defer rl.UnloadModel(entt.model)
 
 	entt_center_clicked := false
 
@@ -299,6 +298,8 @@ draw :: proc(t: ^testing.T) {
 
 		rl.EndDrawing()
 	}
+
+	rl.UnloadModel(entt.model)
 
 	rl.CloseWindow()
 }
