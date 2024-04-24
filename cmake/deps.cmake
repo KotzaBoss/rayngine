@@ -6,7 +6,7 @@ endif()
 
 FetchContent_Declare(raylib
 		GIT_REPOSITORY git@github.com:KotzaBoss/raylib.git
-		GIT_TAG  clip-distance-variable
+		GIT_TAG  master
 		EXCLUDE_FROM_ALL
 	)
 
