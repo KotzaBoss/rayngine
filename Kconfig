@@ -29,6 +29,16 @@ config ODIN_COLLECTION
 	default "${PROJECT_SOURCE_DIR}/src"
 
 
+menu "Resources"
+	config RESOURCE_DIR
+		string "Directory to look for resources"
+		default "${CMAKE_BINARY_DIR}/res"
+
+	config MINI_SPACE_PACK_DIR
+		string
+		default "${RAYNGINE_RESOURCE_DIR}/Mini_space_pack"
+endmenu
+
 # Left as a comment if you need to remember the pattern
 #menu "Compiler"
 #

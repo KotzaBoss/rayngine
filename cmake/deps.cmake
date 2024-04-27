@@ -25,10 +25,21 @@ FetchContent_Declare(rguilayout
 		EXCLUDE_FROM_ALL
 	)
 
+FetchContent_Declare(fbx2gltf
+		URL https://github.com/godotengine/FBX2glTF/releases/download/v0.13.1/FBX2glTF-linux-x86_64.zip
+		EXCLUDE_FROM_ALL
+	)
+
 
 section("raylib technologies")
 
 FetchContent_MakeAvailable(raylib raygui rguilayout)
+
+
+section("fbx2gltf")
+
+FetchContent_MakeAvailable(fbx2gltf)
+set(FBX2GLTF ${fbx2gltf_SOURCE_DIR}/FBX2glTF-linux-x86_64)
 
 
 section("glfw")

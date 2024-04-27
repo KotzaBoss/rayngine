@@ -21,8 +21,10 @@ endif()
 include(deps)
 include(odin)
 
+add_subdirectory(res)
 add_subdirectory(src)
 add_subdirectory(bin)
+
 
 section("Commands")
 m(NOTICE "cmake --build build -- rayngine")

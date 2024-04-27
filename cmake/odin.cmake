@@ -33,16 +33,9 @@ add_custom_command(
 	)
 
 
-# Prepare ODIN_ARGS
+# Odin arguments
 
-if (RAYNGINE_ODIN_COLLECTION)
-	list(APPEND ODIN_ARGS "-collection:rayngine=${RAYNGINE_ODIN_COLLECTION}")
-endif()
-
-if (RAYNGINE_BUILD_DEBUG)
-	list(APPEND ODIN_ARGS "-debug")
-endif()
-
+# ODIN_DEFINES
 foreach (v ${RAYNGINE_VARIABLES})
 	set(key ${v})
 	set(value ${${v}})
@@ -55,12 +48,22 @@ foreach (v ${RAYNGINE_VARIABLES})
 	endif()
 endforeach()
 list(TRANSFORM ODIN_DEFINES PREPEND "-define:")
-list(APPEND ODIN_ARGS ${ODIN_DEFINES})
+
+# ODIN_FLAGS
+if (RAYNGINE_ODIN_COLLECTION)
+	list(APPEND ODIN_FLAGS "-collection:rayngine=${RAYNGINE_ODIN_COLLECTION}")
+endif()
+
+if (RAYNGINE_BUILD_DEBUG)
+	list(APPEND ODIN_FLAGS "-debug")
+endif()
+
+# ODIN_ARGS
+set(ODIN_ARGS ${ODIN_DEFINES} ${ODIN_FLAGS})
 
 
-# Report
-m("Odin arguments:")
-foreach (odin_define IN LISTS ODIN_ARGS)
-	m("\t${odin_define}")
+section("Odin arguments")
+foreach (a IN LISTS ODIN_ARGS)
+	m("${a}")
 endforeach()
 

@@ -127,7 +127,8 @@ main :: proc() {
 
 	{
 		// TODO: Make a "paths" file for all the predefined paths
-		fd, ok1 := os.open("res/Mini space pack")
+		mini :: #config(RAYNGINE_MINI_SPACE_PACK_DIR, "")
+		fd, ok1 := os.open(mini)
 		defer os.close(fd)
 		assert(ok1 == 0)	// Is this idiomatic? what if multiplefunctions return the same error type?
 
@@ -146,7 +147,7 @@ main :: proc() {
 			append_soa(&entities, ecs.Entity{
 					name=f.name,
 					rigid_body={
-							position = {auto_cast i * 2000, 0, 0},
+							position = {auto_cast i * 50, 0, 0},
 							rotation = {},
 							scale = 1
 						},
@@ -164,7 +165,7 @@ main :: proc() {
 
 	// Raylib
 	camera := rl.Camera3D{
-		position={0, 5000, 5000},
+		position={0, 50, 50},
 		target=0,
 		up={0, 1, 0},
 		fovy=60.0,
@@ -175,7 +176,7 @@ main :: proc() {
 
     for !rl.WindowShouldClose() {
 
-		update_camera(&camera, 100, 0.01, 500)
+		update_camera(&camera, 5, 0.01, 10)
 
         rl.BeginDrawing()
             rl.ClearBackground(rl.DARKGRAY)
@@ -196,8 +197,8 @@ main :: proc() {
 
 					rl.DrawSphereWires(
 							entt.rigid_body.position,
-							500,
-							10, 10,
+							20,
+							5, 10,
 							rl.RED if ecs.collides(entt, rlu.mouse_ray(camera)) else rl.WHITE
 						)
 				rl.EndMode3D()
