@@ -1,7 +1,3 @@
-get_directory_property(pkgs
-		DIRECTORY ${PROJECT_SOURCE_DIR}/src
-		DEFINITION pkgs
-	)
 
 add_custom_target(rayngine
 		COMMAND ${ODIN} build
