@@ -45,7 +45,6 @@ update_context :: proc(ui: ^Context($Entity), entities: #soa []Entity, camera: r
 					break
 				}
 			}
-		case:
 	}
 }
 

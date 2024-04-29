@@ -192,11 +192,11 @@ main :: proc() {
 
 			ui.update(&UI, entities[:], camera)
 
-			for &entt, i in entities {
-				rl.BeginMode3D(camera)
-					ecs.draw(&entt)
-				rl.EndMode3D()
-			}
+			rl.BeginMode3D(camera)
+				for &entt, i in entities {
+						ecs.draw(&entt)
+				}
+			rl.EndMode3D()
 
 			ui.draw(UI, camera)
 
