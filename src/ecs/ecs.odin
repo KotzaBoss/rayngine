@@ -9,7 +9,7 @@ Entity :: struct {
 	name: string,
 	rigid_body: rb.Rigid_Body,
 	model: rl.Model,
-	ui: ui.Entity,
+	ui: ui.Entity_Info,
 }
 
 draw :: proc(using e: ^Entity) {

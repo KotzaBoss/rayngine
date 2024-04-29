@@ -152,7 +152,7 @@ main :: proc() {
 							scale = 1
 						},
 					model=model,
-					ui=ui.make(rl.GetModelBoundingBox(model), 25, 50)
+					ui=ui.make_info(rl.GetModelBoundingBox(model), 25, 50)
 				})
 		}
 	}
@@ -161,8 +161,8 @@ main :: proc() {
 		delete(entities)
 	}
 
-	UI : ui.UI(ecs.Entity)
-	defer ui.delete(UI)
+	UI : ui.Context(ecs.Entity)
+	defer ui.delete_context(UI)
 
 	// Raylib
 	camera := rl.Camera3D{

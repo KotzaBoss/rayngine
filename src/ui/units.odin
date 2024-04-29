@@ -13,27 +13,23 @@ import rlu "rayngine:raylibutil"
 
 import rl "vendor:raylib"
 
-
-UI :: struct($Entt: typeid) where
-	intr.type_field_type(Entt, "rigid_body") == rb.Rigid_Body,
-	intr.type_field_type(Entt, "ui") == Entity	// TODO: Remove this requirement and find a simpler way to produce ui rectangles etc
+Context :: struct($Entity: typeid) where
+	intr.type_field_type(Entity, "rigid_body") == rb.Rigid_Body,
+	intr.type_field_type(Entity, "model") == rl.Model,
+	intr.type_field_type(Entity, "ui") == Entity_Info
 {
-	selection: Mouse_Selection,
-	selected: [dynamic]Entt,	// TODO: Tweak to hold a pointer?
+	mouse: Mouse,
+	selected: [dynamic]Entity,	// TODO: Tweak to hold a pointer?
 }
 
-delete :: proc(ui: UI($Entity)) {
-	runtime.delete(ui.selected)
-}
+// Entities should already be filtered down to subset that are on screen
+update_context :: proc(ui: ^Context($Entity), entities: #soa []Entity, camera: rl.Camera) {
+	update(&ui.mouse, camera)
 
-update :: proc(ui: ^UI($Entity), entities: #soa []Entity, camera: rl.Camera) {
-	ui.selection = mouse(camera)
-
-	// TODO: Make it a bit more sophisticated when things start to get settled
-	clear(&ui.selected)
-
-	switch s in ui.selection {
+	switch s in ui.mouse.selection {
 		case rl.Rectangle:
+			// TODO: Make it a bit more sophisticated when things start to get settled
+			clear(&ui.selected)
 			for e in entities {
 				screen_pos := rl.GetWorldToScreen(e.rigid_body.position, camera)
 				if rl.CheckCollisionPointRec(screen_pos, s) {
@@ -41,70 +37,91 @@ update :: proc(ui: ^UI($Entity), entities: #soa []Entity, camera: rl.Camera) {
 				}
 			}
 		case rl.Ray:
+			clear(&ui.selected)
+			for e in entities {
+				if rlu.ray_model_collide(s, e.model, rb.transform(e.rigid_body)) {
+					append(&ui.selected, e)
+					// TODO: Resolve depth
+					break
+				}
+			}
+		case:
 	}
 }
 
-draw :: proc(ui: UI($Entity), camera: rl.Camera) {
-	switch s in ui.selection {
-		case rl.Rectangle:
-			rl.DrawRectangleLinesEx(s, 1, rl.BLUE)
-			for e in ui.selected {
-				screen_pos := rl.GetWorldToScreen(e.rigid_body.position, camera)
-				rl.DrawRectangleLines(
-					auto_cast (screen_pos.x - e.ui.size / 2), auto_cast (screen_pos.y - e.ui.size / 2),
-					auto_cast e.ui.size, auto_cast e.ui.size,
-					rl.GREEN
-				)
-			}
-		case rl.Ray:
+draw :: proc(ui: Context($Entity), camera: rl.Camera) {
+	if s, is_rect := ui.mouse.selection.(rl.Rectangle); is_rect {
+		rl.DrawRectangleLinesEx(s, 1, rl.BLUE)
 	}
+
+	for e in ui.selected {
+		screen_pos := rl.GetWorldToScreen(e.rigid_body.position, camera)
+		rl.DrawRectangleLines(
+			auto_cast (screen_pos.x - e.ui.size / 2), auto_cast (screen_pos.y - e.ui.size / 2),
+			auto_cast e.ui.size, auto_cast e.ui.size,
+			rl.GREEN
+		)
+	}
+}
+
+delete_context :: proc(ui: Context($Entity)) {
+	delete(ui.selected)
 }
 
 // Collection of data to be embedded in "game entities" to track information related to the ui.
-Entity :: struct {
+Entity_Info :: struct {
 	size: f32,
 	// Any length, ex from a model bounding box, that we will consider the radius of
 	// the "selection bounding sphere" in the actual 3D world that will be projected on the screen
 	min, max: f32,
 }
 
-make :: proc(bb: rl.BoundingBox, min, max: f32) -> Entity {
+make_info :: proc(bb: rl.BoundingBox, min, max: f32) -> Entity_Info {
 	x := bb.max - bb.min
 	m := slice.min(x[:])
 	return { linalg.distance(bb.max, bb.min), min, max, }
 }
 
-Mouse_Selection :: union{ rl.Rectangle, rl.Ray }
 
-mouse :: proc(camera: rl.Camera) -> (selection: Mouse_Selection) {
-	@static anchor: rl.Vector2
-	@static rect: rl.Rectangle
+Mouse :: struct {
+	selection: union{ rl.Rectangle, rl.Ray },
 
+	// Private
+	anchor: rl.Vector2,
+	rect: rl.Rectangle,
+}
+
+update_mouse :: proc(m: ^Mouse, camera: rl.Camera) {
 	if rl.IsMouseButtonPressed(.LEFT) {
-		anchor = rl.GetMousePosition()
-		rect = {}
+		m.anchor = rl.GetMousePosition()
+		m.rect = {}
 	}
 	else if rl.IsMouseButtonDown(.LEFT) {
 		pos := rl.GetMousePosition()
 
-		rect = rl.Rectangle{
-			x = anchor.x,
-			y = anchor.y,
-			width = abs(pos.x - anchor.x),
-			height = abs(pos.y - anchor.y),
+		m.rect = rl.Rectangle{
+			x = m.anchor.x,
+			y = m.anchor.y,
+			width = abs(pos.x - m.anchor.x),
+			height = abs(pos.y - m.anchor.y),
 		}
 
-		if pos.x < anchor.x do rect.x = pos.x
-		if pos.y < anchor.y do rect.y = pos.y
+		if pos.x < m.anchor.x do m.rect.x = pos.x
+		if pos.y < m.anchor.y do m.rect.y = pos.y
 
-		selection = rect
+		m.selection = m.rect
 	}
 	else if rl.IsMouseButtonReleased(.LEFT) {
-		if rect.width == 0 && rect.height == 0 {
-			selection = rlu.mouse_ray(camera)
+		if m.rect.width == 0 && m.rect.height == 0 {
+			m.selection = rlu.mouse_ray(camera)
 		}
 	}
-
-	return
+	else {
+		m.selection = nil
+	}
 }
 
+update :: proc{
+	update_context,
+	update_mouse,
+}
