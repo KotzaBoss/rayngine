@@ -161,7 +161,8 @@ main :: proc() {
 		delete(entities)
 	}
 
-	_, e_rigid_bodies, _, e_uis := soa_unzip(entities[:])
+	UI : ui.UI(ecs.Entity)
+	defer ui.delete(UI)
 
 	// Raylib
 	camera := rl.Camera3D{
@@ -189,22 +190,15 @@ main :: proc() {
 				rl.DrawLine3D({0, 0, 0}, {0, 0, 3000}, rl.BLUE)
 			rl.EndMode3D()
 
+			ui.update(&UI, entities[:], camera)
+
 			for &entt, i in entities {
 				rl.BeginMode3D(camera)
-					entt.rigid_body.rotation += {0, 0.5, 0}
-
 					ecs.draw(&entt)
-
-					rl.DrawSphereWires(
-							entt.rigid_body.position,
-							20,
-							5, 10,
-							rl.RED if ecs.collides(entt, rlu.mouse_ray(camera)) else rl.WHITE
-						)
 				rl.EndMode3D()
 			}
 
-			ui.gui(e_uis, e_rigid_bodies, camera, ui.drag_select())
+			ui.draw(UI, camera)
 
 			rl.DrawFPS(10, 10)
 

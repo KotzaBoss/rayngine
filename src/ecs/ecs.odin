@@ -12,9 +12,9 @@ Entity :: struct {
 	ui: ui.Entity,
 }
 
-draw :: proc(using e: ^Entity, color: rl.Color = rl.WHITE) {
-	model.transform = rb.rotation(rigid_body)
-	rl.DrawModel(model, rigid_body.position, rigid_body.scale, color)
+draw :: proc(using e: ^Entity) {
+	model.transform = rb.rotation(rigid_body)	// TODO: Propably do whenever rigid_body is tweaked and no pointer here
+	rl.DrawModel(model, rigid_body.position, rigid_body.scale, rl.WHITE)
 }
 
 collides :: proc(using e: Entity, ray: rl.Ray) -> bool {
