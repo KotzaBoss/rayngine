@@ -117,7 +117,32 @@ update_mouse :: proc(m: ^Mouse, camera: rl.Camera) {
 	}
 }
 
+// Third person camera
+//
+// WASD: Move
+// Alt + mouse: Rotate
+// Scroll: Zoom
+//
+update_camera :: proc(camera: ^rl.Camera, move_speed: f32, rotation_speed: f32, scroll_speed: f32) {
+	if rl.IsKeyDown(.W) do rl.CameraMoveForward(camera,  move_speed, moveInWorldPlane=true);
+	if rl.IsKeyDown(.A) do rl.CameraMoveRight(camera,   -move_speed, moveInWorldPlane=true);
+	if rl.IsKeyDown(.S) do rl.CameraMoveForward(camera, -move_speed, moveInWorldPlane=true);
+	if rl.IsKeyDown(.D) do rl.CameraMoveRight(camera,    move_speed, moveInWorldPlane=true);
+
+	if rl.IsMouseButtonDown(.MIDDLE) {
+		delta := rl.GetMouseDelta() * rotation_speed
+		rl.CameraYaw(camera, delta.x, rotateAroundTarget=true)
+		rl.CameraPitch(camera, delta.y, lockView=true, rotateAroundTarget=true, rotateUp=false)
+	}
+	else if rl.IsKeyDown(.Q) do rl.CameraYaw(camera, -rotation_speed, rotateAroundTarget=true)
+	else if rl.IsKeyDown(.E) do rl.CameraYaw(camera,  rotation_speed, rotateAroundTarget=true)
+
+	rl.CameraMoveToTarget(camera, -rl.GetMouseWheelMove() * scroll_speed)
+}
+
+
 update :: proc{
 	update_context,
 	update_mouse,
+	update_camera,
 }
