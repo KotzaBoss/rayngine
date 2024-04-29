@@ -70,15 +70,12 @@ delete_context :: proc(ui: Context($Entity)) {
 // Collection of data to be embedded in "game entities" to track information related to the ui.
 Entity_Info :: struct {
 	size: f32,
-	// Any length, ex from a model bounding box, that we will consider the radius of
-	// the "selection bounding sphere" in the actual 3D world that will be projected on the screen
-	min, max: f32,
 }
 
-make_info :: proc(bb: rl.BoundingBox, min, max: f32) -> Entity_Info {
+make_info :: proc(bb: rl.BoundingBox) -> Entity_Info {
 	x := bb.max - bb.min
 	m := slice.min(x[:])
-	return { linalg.distance(bb.max, bb.min), min, max, }
+	return { linalg.distance(bb.max, bb.min) }
 }
 
 

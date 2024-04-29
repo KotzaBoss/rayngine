@@ -152,7 +152,7 @@ main :: proc() {
 							scale = 1
 						},
 					model=model,
-					ui=ui.make_info(rl.GetModelBoundingBox(model), 25, 50)
+					ui=ui.make_info(rl.GetModelBoundingBox(model))
 				})
 		}
 	}
@@ -177,7 +177,7 @@ main :: proc() {
 
     for !rl.WindowShouldClose() {
 
-		update_camera(&camera, 5, 0.01, 10)
+		update_camera(&camera, move_speed=5, rotation_speed=0.01, scroll_speed=10)
 
         rl.BeginDrawing()
             rl.ClearBackground(rl.DARKGRAY)
