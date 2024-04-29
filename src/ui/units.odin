@@ -13,6 +13,7 @@ import rlu "rayngine:raylibutil"
 
 import rl "vendor:raylib"
 
+
 Context :: struct($Entity: typeid) where
 	intr.type_field_type(Entity, "rigid_body") == rb.Rigid_Body,
 	intr.type_field_type(Entity, "model") == rl.Model,
@@ -67,6 +68,7 @@ delete_context :: proc(ui: Context($Entity)) {
 	delete(ui.selected)
 }
 
+
 // Collection of data to be embedded in "game entities" to track information related to the ui.
 Entity_Info :: struct {
 	size: f32,
@@ -116,6 +118,7 @@ update_mouse :: proc(m: ^Mouse, camera: rl.Camera) {
 		m.selection = nil
 	}
 }
+
 
 // Third person camera
 //
