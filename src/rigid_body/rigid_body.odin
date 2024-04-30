@@ -9,7 +9,6 @@ import rl "vendor:raylib"
 
 Rigid_Body :: struct {
 	position: rl.Vector3,
-	// Q: Change to quaternion and essentially use rl.Transform?
 	rotation: rl.Vector3,	// In degrees
 	scale: f32,
 }
@@ -32,6 +31,14 @@ scale :: proc(rb: Rigid_Body) -> Transform {
 
 transform :: proc(rb: Rigid_Body) -> Transform {
 	return translation(rb) * rotation(rb) * scale(rb)
+}
+
+
+centroid :: proc(rbs: []Rigid_Body) -> rl.Vector3 {
+	sum := slice.reduce(rbs, rl.Vector3{}, proc(sum: rl.Vector3, rb: Rigid_Body) -> rl.Vector3 {
+			return sum + rb.position
+		})
+	return sum / auto_cast len(rbs)
 }
 
 /////////////////////////////////////// Gui

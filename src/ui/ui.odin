@@ -75,14 +75,7 @@ update :: proc(ui: ^Context($Entity),
 	if ui.mouse.selection != nil && len(ui.selected) > 0 && rl.IsKeyDown(.LEFT_ALT) {
 		// FIXME: Remove this when UI.selected.rigid_bodies[:] can compile
 		_, rigid_bodies, _, _ := soa_unzip(ui.selected[:])
-
-		// TODO: move centroid calculation to rigid_body.odin
-		//       centroid :: proc(rbs: []Rigid_Body) -> rl.Vector3 {}
-		sum := slice.reduce(rigid_bodies, rl.Vector3{}, proc(sum: rl.Vector3, rb: rb.Rigid_Body) -> rl.Vector3 {
-				return sum + rb.position
-			})
-
-		centroid := sum / f32(len(ui.selected))
+		centroid := rb.centroid(rigid_bodies)
 
 		ui.focus = Camera_Focus{
 			target = centroid,
