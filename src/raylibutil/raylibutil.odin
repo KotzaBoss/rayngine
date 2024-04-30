@@ -1,5 +1,7 @@
 package raylibutil
 
+import "core:math/linalg"
+
 import rl "vendor:raylib"
 
 mouse_ray :: proc(camera: rl.Camera) -> rl.Ray {
@@ -14,4 +16,8 @@ ray_model_collide :: proc(ray: rl.Ray, model: rl.Model, transform: #row_major ma
 		}
 	}
 	return false
+}
+
+camera_target_distance :: proc(camera: rl.Camera) -> f32 {
+	return linalg.distance(camera.position, camera.target)
 }
