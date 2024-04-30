@@ -173,7 +173,7 @@ update_mouse :: proc(m: ^Mouse, camera: rl.Camera) {
 // Third person camera
 //
 // WASD: Move
-// Middle mouse: Rotate
+// Right: Rotate
 // Scroll: Zoom
 //
 update_camera :: proc(camera: ^rl.Camera, move_speed: f32, rotation_speed: f32, scroll_speed: f32) {
@@ -182,10 +182,20 @@ update_camera :: proc(camera: ^rl.Camera, move_speed: f32, rotation_speed: f32, 
 	if rl.IsKeyDown(.S) do rl.CameraMoveForward(camera, -move_speed, moveInWorldPlane=true);
 	if rl.IsKeyDown(.D) do rl.CameraMoveRight(camera,    move_speed, moveInWorldPlane=true);
 
-	if rl.IsMouseButtonDown(.MIDDLE) {
-		delta := rl.GetMouseDelta() * rotation_speed
-		rl.CameraYaw(camera, delta.x, rotateAroundTarget=true)
-		rl.CameraPitch(camera, delta.y, lockView=true, rotateAroundTarget=true, rotateUp=false)
+	if rl.IsMouseButtonDown(.RIGHT) {
+		delta := rl.GetMouseDelta()
+
+		// Hide and "freeze" mouse to allow for unlimited rotation
+		rl.HideCursor()
+		old_pos := rl.GetMousePosition() - delta
+		rl.SetMousePosition(auto_cast old_pos.x, auto_cast old_pos.y)
+
+		rl.CameraYaw(camera, delta.x * rotation_speed, rotateAroundTarget=true)
+		rl.CameraPitch(camera, delta.y * rotation_speed, lockView=true, rotateAroundTarget=true, rotateUp=false)
+
+	}
+	else if rl.IsMouseButtonReleased(.RIGHT) {
+		rl.ShowCursor()
 	}
 	else if rl.IsKeyDown(.Q) do rl.CameraYaw(camera, -rotation_speed, rotateAroundTarget=true)
 	else if rl.IsKeyDown(.E) do rl.CameraYaw(camera,  rotation_speed, rotateAroundTarget=true)
