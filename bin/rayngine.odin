@@ -138,44 +138,40 @@ main :: proc() {
 		delete(entities)
 	}
 
-	UI : ui.Context(ecs.Entity)
+	UI := ui.make_context(ecs.Entity,
+			rl.Camera3D{
+				position={0, 50, 50},
+				target=0,
+				up={0, 1, 0},
+				fovy=60.0,
+				projection=.PERSPECTIVE
+			}
+		)
 	defer ui.delete_context(UI)
-
-	// Raylib
-	camera := rl.Camera3D{
-		position={0, 50, 50},
-		target=0,
-		up={0, 1, 0},
-		fovy=60.0,
-		projection=.PERSPECTIVE
-	}
 
 	rl.SetTargetFPS(60)
 
     for !rl.WindowShouldClose() {
 
-		ui.update(&camera, move_speed=5, rotation_speed=0.01, scroll_speed=10)
+		ui.update(&UI, entities[:], camera={ move_speed=5.0, rotation_speed=0.01, scroll_speed=10 })
+
 
         rl.BeginDrawing()
             rl.ClearBackground(rl.DARKGRAY)
 
-			rl.BeginMode3D(camera)
+			rl.BeginMode3D(UI.camera)
 				rl.DrawGrid(1000, 1000)
 
 				rl.DrawLine3D({0, 0, 0}, {3000, 0, 0}, rl.RED)
 				rl.DrawLine3D({0, 0, 0}, {0, 3000, 0}, rl.GREEN)
 				rl.DrawLine3D({0, 0, 0}, {0, 0, 3000}, rl.BLUE)
-			rl.EndMode3D()
 
-			ui.update(&UI, entities[:], camera)
-
-			rl.BeginMode3D(camera)
 				for &entt, i in entities {
 						ecs.draw(&entt)
 				}
 			rl.EndMode3D()
 
-			ui.draw(UI, camera)
+			ui.draw(UI)
 
 			rl.DrawFPS(10, 10)
 

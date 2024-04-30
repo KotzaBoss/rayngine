@@ -13,49 +13,107 @@ import rlu "rayngine:raylibutil"
 
 import rl "vendor:raylib"
 
+Camera_Focus :: struct {
+	target, position: rl.Vector3,
+	distance: f32,
+}
 
 Context :: struct($Entity: typeid) where
 	intr.type_field_type(Entity, "rigid_body") == rb.Rigid_Body,
 	intr.type_field_type(Entity, "model") == rl.Model,
 	intr.type_field_type(Entity, "ui") == Entity_Info
 {
+	camera: rl.Camera,
 	mouse: Mouse,
-	selected: [dynamic]Entity,	// TODO: Tweak to hold a pointer?
+	selected: #soa [dynamic]Entity,	// TODO: Tweak to hold a pointer?
+	focus: union{ Camera_Focus },
+}
+
+make_context :: proc($Entity: typeid, camera: rl.Camera) -> Context(Entity) {
+	return {
+		camera,
+		Mouse{},
+		make_soa(#soa [dynamic]Entity),
+		nil,
+	}
 }
 
 // Entities should already be filtered down to subset that are on screen
-update_context :: proc(ui: ^Context($Entity), entities: #soa []Entity, camera: rl.Camera) {
-	update(&ui.mouse, camera)
+update :: proc(ui: ^Context($Entity),
+	entities: #soa []Entity,
+	camera: struct {
+		move_speed: f32,
+		rotation_speed: f32,
+		scroll_speed: f32,
+	}
+) {
+	update_camera(&ui.camera, camera.move_speed, camera.rotation_speed, camera.scroll_speed)
 
+	update_mouse(&ui.mouse, ui.camera)
 	switch s in ui.mouse.selection {
 		case rl.Rectangle:
 			// TODO: Make it a bit more sophisticated when things start to get settled
-			clear(&ui.selected)
+			clear_soa(&ui.selected)
 			for e in entities {
-				screen_pos := rl.GetWorldToScreen(e.rigid_body.position, camera)
+				screen_pos := rl.GetWorldToScreen(e.rigid_body.position, ui.camera)
 				if rl.CheckCollisionPointRec(screen_pos, s) {
-					append(&ui.selected, e)
+					append_soa(&ui.selected, e)
 				}
 			}
 		case rl.Ray:
-			clear(&ui.selected)
+			clear_soa(&ui.selected)
 			for e in entities {
 				if rlu.ray_model_collide(s, e.model, rb.transform(e.rigid_body)) {
-					append(&ui.selected, e)
+					append_soa(&ui.selected, e)
 					// TODO: Resolve depth
 					break
 				}
 			}
 	}
+
+	// If multi-selected with LEFT_ALT, make camera target the centroid of selected entities
+	if ui.mouse.selection != nil && len(ui.selected) > 0 && rl.IsKeyDown(.LEFT_ALT) {
+		// FIXME: Remove this when UI.selected.rigid_bodies[:] can compile
+		_, rigid_bodies, _, _ := soa_unzip(ui.selected[:])
+
+		// TODO: move centroid calculation to rigid_body.odin
+		//       centroid :: proc(rbs: []Rigid_Body) -> rl.Vector3 {}
+		sum := slice.reduce(rigid_bodies, rl.Vector3{}, proc(sum: rl.Vector3, rb: rb.Rigid_Body) -> rl.Vector3 {
+				return sum + rb.position
+			})
+
+		centroid := sum / f32(len(ui.selected))
+
+		ui.focus = Camera_Focus{
+			target = centroid,
+			position = ui.camera.position + (centroid - ui.camera.target),
+			distance = rlu.camera_target_distance(ui.camera)
+		}
+	}
+	else if ui.focus != nil {
+		focus := ui.focus.(Camera_Focus)
+
+		speed :: 15
+		weight := speed * rl.GetFrameTime()
+
+		ui.camera.target = math.lerp(ui.camera.target, focus.target, weight)
+		ui.camera.position = math.lerp(ui.camera.position, focus.position, weight)
+
+		// TODO: Stop if player uses the camera in any way.
+		if rlu.camera_target_distance(ui.camera) < focus.distance + 5 && ui.camera.target == focus.target {
+			fmt.println("done")
+			ui.focus = nil
+		}
+	}
 }
 
-draw :: proc(ui: Context($Entity), camera: rl.Camera) {
+draw :: proc(ui: Context($Entity)) {
 	if s, is_rect := ui.mouse.selection.(rl.Rectangle); is_rect {
 		rl.DrawRectangleLinesEx(s, 1, rl.BLUE)
 	}
 
 	for e in ui.selected {
-		screen_pos := rl.GetWorldToScreen(e.rigid_body.position, camera)
+		screen_pos := rl.GetWorldToScreen(e.rigid_body.position, ui.camera)
 		rl.DrawRectangleLines(
 			auto_cast (screen_pos.x - e.ui.size / 2), auto_cast (screen_pos.y - e.ui.size / 2),
 			auto_cast e.ui.size, auto_cast e.ui.size,
@@ -84,7 +142,6 @@ make_info :: proc(bb: rl.BoundingBox) -> Entity_Info {
 Mouse :: struct {
 	selection: union{ rl.Rectangle, rl.Ray },
 
-	// Private
 	anchor: rl.Vector2,
 	rect: rl.Rectangle,
 }
@@ -123,7 +180,7 @@ update_mouse :: proc(m: ^Mouse, camera: rl.Camera) {
 // Third person camera
 //
 // WASD: Move
-// Alt + mouse: Rotate
+// Middle mouse: Rotate
 // Scroll: Zoom
 //
 update_camera :: proc(camera: ^rl.Camera, move_speed: f32, rotation_speed: f32, scroll_speed: f32) {
@@ -143,9 +200,3 @@ update_camera :: proc(camera: ^rl.Camera, move_speed: f32, rotation_speed: f32, 
 	rl.CameraMoveToTarget(camera, -rl.GetMouseWheelMove() * scroll_speed)
 }
 
-
-update :: proc{
-	update_context,
-	update_mouse,
-	update_camera,
-}
