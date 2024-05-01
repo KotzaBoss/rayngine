@@ -52,26 +52,29 @@ update :: proc(ui: ^Context($Entity),
 {
 	update_camera(&ui.camera, camera.move_speed, camera.rotation_speed, camera.scroll_speed)
 
-	update_mouse(&ui.mouse, ui.camera.raylib)
-	switch s in ui.mouse.selection {
-		case rl.Rectangle:
-			// TODO: Make it a bit more sophisticated when things start to get settled
-			clear_soa(&ui.selection.entities)
-			for e in entities {
-				screen_pos := rl.GetWorldToScreen(e.rigid_body.position, ui.camera.raylib)
-				if rl.CheckCollisionPointRec(screen_pos, s) {
-					append_soa(&ui.selection.entities, e)
+
+	if ui.move_order == nil {
+		update_mouse(&ui.mouse, ui.camera.raylib)
+		switch s in ui.mouse.selection {
+			case rl.Rectangle:
+				// TODO: Make it a bit more sophisticated when things start to get settled
+				clear_soa(&ui.selection.entities)
+				for e in entities {
+					screen_pos := rl.GetWorldToScreen(e.rigid_body.position, ui.camera.raylib)
+					if rl.CheckCollisionPointRec(screen_pos, s) {
+						append_soa(&ui.selection.entities, e)
+					}
 				}
-			}
-		case rl.Ray:
-			clear_soa(&ui.selection.entities)
-			for e in entities {
-				if rlu.ray_model_collide(s, e.model, rb.transform(e.rigid_body)) {
-					append_soa(&ui.selection.entities, e)
-					// TODO: Resolve depth
-					break
+			case rl.Ray:
+				clear_soa(&ui.selection.entities)
+				for e in entities {
+					if rlu.ray_model_collide(s, e.model, rb.transform(e.rigid_body)) {
+						append_soa(&ui.selection.entities, e)
+						// TODO: Resolve depth
+						break
+					}
 				}
-			}
+		}
 	}
 
 
@@ -205,31 +208,34 @@ Mouse :: struct {
 
 update_mouse :: proc(m: ^Mouse, camera: rl.Camera) {
 	if rl.IsMouseButtonPressed(.LEFT) {
+		m.selection = rl.Rectangle{}
 		m.anchor = rl.GetMousePosition()
 		m.rect = {}
 	}
-	else if rl.IsMouseButtonDown(.LEFT) {
-		pos := rl.GetMousePosition()
+	else if m.selection != nil {	// To confirm the "press" update step has occured
+		if rl.IsMouseButtonDown(.LEFT) {
+			pos := rl.GetMousePosition()
 
-		m.rect = rl.Rectangle{
-			x = m.anchor.x,
-			y = m.anchor.y,
-			width = abs(pos.x - m.anchor.x),
-			height = abs(pos.y - m.anchor.y),
+			m.rect = rl.Rectangle{
+				x = m.anchor.x,
+				y = m.anchor.y,
+				width = abs(pos.x - m.anchor.x),
+				height = abs(pos.y - m.anchor.y),
+			}
+
+			if pos.x < m.anchor.x do m.rect.x = pos.x
+			if pos.y < m.anchor.y do m.rect.y = pos.y
+
+			m.selection = m.rect
 		}
-
-		if pos.x < m.anchor.x do m.rect.x = pos.x
-		if pos.y < m.anchor.y do m.rect.y = pos.y
-
-		m.selection = m.rect
-	}
-	else if rl.IsMouseButtonReleased(.LEFT) {
-		if m.rect.width == 0 && m.rect.height == 0 {
-			m.selection = rlu.mouse_ray(camera)
+		else if rl.IsMouseButtonReleased(.LEFT) {
+			if m.rect.width == 0 && m.rect.height == 0 {
+				m.selection = rlu.mouse_ray(camera)
+			}
 		}
-	}
-	else {
-		m.selection = nil
+		else {
+			m.selection = nil
+		}
 	}
 }
 
