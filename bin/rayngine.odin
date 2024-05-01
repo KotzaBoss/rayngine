@@ -153,8 +153,7 @@ main :: proc() {
 
     for !rl.WindowShouldClose() {
 
-		ui.update(&UI, entities[:], camera={ move_speed=5.0, rotation_speed=0.01, scroll_speed=10 })
-
+		update_results := ui.update(&UI, entities[:], camera={ move_speed=5.0, rotation_speed=0.01, scroll_speed=10 })
 
         rl.BeginDrawing()
             rl.ClearBackground(rl.DARKGRAY)

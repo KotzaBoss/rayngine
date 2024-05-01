@@ -20,7 +20,7 @@ Selection :: struct($Entity: typeid) {
 
 Move_Order :: struct {
 	point: rl.Vector3,
-	radius: f32,
+	radius, height: f32,
 }
 
 Context :: struct($Entity: typeid) where
@@ -44,10 +44,12 @@ make_context :: proc($Entity: typeid, camera: rl.Camera) -> Context(Entity) {
 }
 
 // Entities should already be filtered down to subset that are on screen
+@require_results
 update :: proc(ui: ^Context($Entity),
-	entities: #soa []Entity,
-	camera: struct { move_speed, rotation_speed, scroll_speed: f32, }
-) {
+		entities: #soa []Entity,
+		camera: struct { move_speed, rotation_speed, scroll_speed: f32, }
+	) -> (results: union{ Move_Order })
+{
 	update_camera(&ui.camera, camera.move_speed, camera.rotation_speed, camera.scroll_speed)
 
 	update_mouse(&ui.mouse, ui.camera.raylib)
@@ -108,23 +110,16 @@ update :: proc(ui: ^Context($Entity),
 
 	// Move Order
 
-	quad := [4]rl.Vector3 {
-		{ -10_000_000, ui.selection.centroid.y, -10_000_000 },
-		{ -10_000_000, ui.selection.centroid.y,  10_000_000 },
-		{  10_000_000, ui.selection.centroid.y,  10_000_000 },
-		{  10_000_000, ui.selection.centroid.y, -10_000_000 },
-	}
-	c := rl.GetRayCollisionQuad(rlu.mouse_ray(ui.camera.raylib), quad[0], quad[1], quad[2], quad[3])
-
 	mo, pending := ui.move_order.?
 
 	if !pending {	// Detect move order
 		if rl.IsMouseButtonReleased(.RIGHT) && len(ui.selection.entities) > 0 && !ui.camera.rotated_since_right_mouse_button_pressed {
-			ui.move_order = Move_Order{point = c.point, radius = 0}
+			c := rlu.simple_ray_xzplane_collision(rlu.mouse_ray(ui.camera.raylib), ui.selection.centroid.y)
+			ui.move_order = Move_Order{point = c.point, radius = 0, height = 0}
 		}
 	}
 	else if rl.IsMouseButtonPressed(.LEFT) {	// Move order confirmed
-		// TODO: return it to game (should be done in update)
+		results = ui.move_order
 		ui.move_order = nil
 	}
 	else if rl.IsMouseButtonReleased(.RIGHT) && !ui.camera.rotated_since_right_mouse_button_pressed	{	// Cancel move order
@@ -133,12 +128,24 @@ update :: proc(ui: ^Context($Entity),
 	else {	// Calculate move order
 		assert(len(ui.selection.entities) > 0)
 
+		if rl.IsKeyDown(.LEFT_SHIFT) {
+			pos := rl.GetMousePosition()
+			delta := rl.GetMouseDelta()
+			old_pos := pos - delta
+			rl.SetMousePosition(auto_cast old_pos.x, rl.GetMouseY())
+			// FIXME: Fix the flickering and add height to move order
+		}
+
+		c := rlu.simple_ray_xzplane_collision(rlu.mouse_ray(ui.camera.raylib), ui.selection.centroid.y)
+
 		if c.hit {
 			mo.point = c.point
 		}
-		mo.radius = linalg.distance(ui.selection.centroid, mo.point)//math.lerp(mo.radius, linalg.distance(ui.selection.centroid, mo.point), rl.GetFrameTime() * 20)
+		mo.radius = linalg.distance(ui.selection.centroid, mo.point)
 		ui.move_order = mo
 	}
+
+	return
 }
 
 draw :: proc(ui: Context($Entity)) {
