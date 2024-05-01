@@ -48,7 +48,7 @@ make_context :: proc($Entity: typeid, camera: rl.Camera) -> Context(Entity) {
 update :: proc(ui: ^Context($Entity),
 		entities: #soa []Entity,
 		camera: struct { move_speed, rotation_speed, scroll_speed: f32, }
-	) -> (results: union{ Move_Order })
+	) -> (confirmed_move_order: union{ rl.Vector3 })
 {
 	update_camera(&ui.camera, camera.move_speed, camera.rotation_speed, camera.scroll_speed)
 
@@ -122,7 +122,7 @@ update :: proc(ui: ^Context($Entity),
 		}
 	}
 	else if rl.IsMouseButtonPressed(.LEFT) {	// Move order confirmed
-		results = ui.move_order
+		confirmed_move_order = ui.move_order.?.point
 		ui.move_order = nil
 	}
 	else if rl.IsMouseButtonReleased(.RIGHT) && !ui.camera.rotated_since_right_mouse_button_pressed	{	// Cancel move order
@@ -147,6 +147,7 @@ update :: proc(ui: ^Context($Entity),
 		mo.radius = linalg.distance(ui.selection.centroid, mo.point)
 		ui.move_order = mo
 	}
+
 
 	return
 }
