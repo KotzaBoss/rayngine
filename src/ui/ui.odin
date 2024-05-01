@@ -13,9 +13,14 @@ import rlu "rayngine:raylibutil"
 
 import rl "vendor:raylib"
 
-Camera_Focus :: struct {
-	target, position: rl.Vector3,
-	distance: f32,
+Selection :: struct($Entity: typeid) {
+	entities: #soa [dynamic]Entity,		// TODO: Tweak to hold a pointer?
+	centroid: rl.Vector3,
+}
+
+Move_Order :: struct {
+	point: rl.Vector3,
+	radius: f32,
 }
 
 Context :: struct($Entity: typeid) where
@@ -23,68 +28,70 @@ Context :: struct($Entity: typeid) where
 	intr.type_field_type(Entity, "model") == rl.Model,
 	intr.type_field_type(Entity, "ui") == Entity_Info
 {
-	camera: rl.Camera,
+	camera: Camera,
 	mouse: Mouse,
-	selected: #soa [dynamic]Entity,	// TODO: Tweak to hold a pointer?
-	focus: union{ Camera_Focus },
+	selection: Selection(Entity),
+	move_order: union{ Move_Order }
 }
 
 make_context :: proc($Entity: typeid, camera: rl.Camera) -> Context(Entity) {
 	return {
-		camera,
-		Mouse{},
-		make_soa(#soa [dynamic]Entity),
-		nil,
+		camera = Camera{ raylib=camera, rotated_since_right_mouse_button_pressed=false, focus=nil },
+		mouse = Mouse{},
+		selection = Selection(Entity) { make_soa(#soa [dynamic]Entity), {} },
+		move_order = nil,
 	}
 }
 
 // Entities should already be filtered down to subset that are on screen
 update :: proc(ui: ^Context($Entity),
 	entities: #soa []Entity,
-	camera: struct {
-		move_speed: f32,
-		rotation_speed: f32,
-		scroll_speed: f32,
-	}
+	camera: struct { move_speed, rotation_speed, scroll_speed: f32, }
 ) {
 	update_camera(&ui.camera, camera.move_speed, camera.rotation_speed, camera.scroll_speed)
 
-	update_mouse(&ui.mouse, ui.camera)
+	update_mouse(&ui.mouse, ui.camera.raylib)
 	switch s in ui.mouse.selection {
 		case rl.Rectangle:
 			// TODO: Make it a bit more sophisticated when things start to get settled
-			clear_soa(&ui.selected)
+			clear_soa(&ui.selection.entities)
 			for e in entities {
-				screen_pos := rl.GetWorldToScreen(e.rigid_body.position, ui.camera)
+				screen_pos := rl.GetWorldToScreen(e.rigid_body.position, ui.camera.raylib)
 				if rl.CheckCollisionPointRec(screen_pos, s) {
-					append_soa(&ui.selected, e)
+					append_soa(&ui.selection.entities, e)
 				}
 			}
 		case rl.Ray:
-			clear_soa(&ui.selected)
+			clear_soa(&ui.selection.entities)
 			for e in entities {
 				if rlu.ray_model_collide(s, e.model, rb.transform(e.rigid_body)) {
-					append_soa(&ui.selected, e)
+					append_soa(&ui.selection.entities, e)
 					// TODO: Resolve depth
 					break
 				}
 			}
 	}
 
-	// If multi-selected with LEFT_ALT, make camera target the centroid of selected entities
-	if ui.mouse.selection != nil && len(ui.selected) > 0 && rl.IsKeyDown(.LEFT_ALT) {
-		// FIXME: Remove this when UI.selected.rigid_bodies[:] can compile
-		_, rigid_bodies, _, _ := soa_unzip(ui.selected[:])
-		centroid := rb.centroid(rigid_bodies)
 
-		ui.focus = Camera_Focus{
-			target = centroid,
-			position = ui.camera.position + (centroid - ui.camera.target),
-			distance = rlu.camera_target_distance(ui.camera)
+	// Camera focus
+
+	// rl.IsMouseButtonReleased(.LEFT) is true here
+	// If multi-selection with LEFT_ALT, make camera target the centroid of selected entities
+	if ui.mouse.selection != nil && len(ui.selection.entities) > 0 {
+		// FIXME: Remove this when UI.selection.rigid_bodies[:] can compile
+		_, rigid_bodies, _, _ := soa_unzip(ui.selection.entities[:])
+		ui.selection.centroid = rb.centroid(rigid_bodies)
+
+		if rl.IsKeyDown(.LEFT_ALT) {
+			ui.camera.focus = Camera_Focus{
+				target = ui.selection.centroid,
+				position = ui.camera.position + (ui.selection.centroid - ui.camera.target),
+				distance = rlu.camera_target_distance(ui.camera.raylib)
+			}
 		}
 	}
-	else if ui.focus != nil {
-		focus := ui.focus.(Camera_Focus)
+	else if ui.camera.focus != nil {
+		focus := ui.camera.focus.(Camera_Focus)
 
 		speed :: 15
 		weight := speed * rl.GetFrameTime()
@@ -94,9 +101,43 @@ update :: proc(ui: ^Context($Entity),
 
 		// TODO: Stop if player uses the camera in any way.
 		if rlu.camera_target_distance(ui.camera) < focus.distance + 5 && ui.camera.target == focus.target {
-			fmt.println("done")
-			ui.focus = nil
+			ui.camera.focus = nil
 		}
+	}
+
+
+	// Move Order
+
+	quad := [4]rl.Vector3 {
+		{ -10_000_000, ui.selection.centroid.y, -10_000_000 },
+		{ -10_000_000, ui.selection.centroid.y,  10_000_000 },
+		{  10_000_000, ui.selection.centroid.y,  10_000_000 },
+		{  10_000_000, ui.selection.centroid.y, -10_000_000 },
+	}
+	c := rl.GetRayCollisionQuad(rlu.mouse_ray(ui.camera.raylib), quad[0], quad[1], quad[2], quad[3])
+
+	mo, pending := ui.move_order.?
+
+	if !pending {	// Detect move order
+		if rl.IsMouseButtonReleased(.RIGHT) && len(ui.selection.entities) > 0 && !ui.camera.rotated_since_right_mouse_button_pressed {
+			ui.move_order = Move_Order{point = c.point, radius = 0}
+		}
+	}
+	else if rl.IsMouseButtonPressed(.LEFT) {	// Move order confirmed
+		// TODO: return it to game (should be done in update)
+		ui.move_order = nil
+	}
+	else if rl.IsMouseButtonReleased(.RIGHT) && !ui.camera.rotated_since_right_mouse_button_pressed	{	// Cancel move order
+		ui.move_order = nil
+	}
+	else {	// Calculate move order
+		assert(len(ui.selection.entities) > 0)
+
+		if c.hit {
+			mo.point = c.point
+		}
+		mo.radius = linalg.distance(ui.selection.centroid, mo.point)//math.lerp(mo.radius, linalg.distance(ui.selection.centroid, mo.point), rl.GetFrameTime() * 20)
+		ui.move_order = mo
 	}
 }
 
@@ -105,7 +146,7 @@ draw :: proc(ui: Context($Entity)) {
 		rl.DrawRectangleLinesEx(s, 1, rl.BLUE)
 	}
 
-	for e in ui.selected {
+	for e in ui.selection.entities {
 		screen_pos := rl.GetWorldToScreen(e.rigid_body.position, ui.camera)
 		rl.DrawRectangleLines(
 			auto_cast (screen_pos.x - e.ui.size / 2), auto_cast (screen_pos.y - e.ui.size / 2),
@@ -113,10 +154,26 @@ draw :: proc(ui: Context($Entity)) {
 			rl.GREEN
 		)
 	}
+
+	rl.BeginMode3D(ui.camera.raylib)
+		if mo, pending := ui.move_order.?; pending {
+			assert(len(ui.selection.entities) > 0)
+
+			// Centroid to cursor circle
+			//rl.DrawCylinder(ui.selection.centroid, mo.radius, mo.radius, 0, 100, rl.YELLOW)
+			rl.DrawCircle3D(ui.selection.centroid, mo.radius, {1, 0, 0}, 90, rl.RED)
+
+			// Centroid to cursor line
+			rl.DrawLine3D(ui.selection.centroid, mo.point, rl.RED)
+
+			// Cursor circle
+			rl.DrawCircle3D(mo.point, 1, {1, 0, 0}, 90, rl.RED)
+		}
+	rl.EndMode3D()
 }
 
 delete_context :: proc(ui: Context($Entity)) {
-	delete(ui.selected)
+	delete(ui.selection.entities)
 }
 
 
@@ -170,36 +227,54 @@ update_mouse :: proc(m: ^Mouse, camera: rl.Camera) {
 }
 
 
+Camera :: struct {
+	using raylib: rl.Camera,
+	rotated_since_right_mouse_button_pressed: bool,
+	focus: union{ Camera_Focus }
+}
+
+Camera_Focus  :: struct {
+	target, position: rl.Vector3,
+	distance: f32,
+}
+
+
 // Third person camera
 //
 // WASD: Move
 // Right: Rotate
 // Scroll: Zoom
 //
-update_camera :: proc(camera: ^rl.Camera, move_speed: f32, rotation_speed: f32, scroll_speed: f32) {
-	if rl.IsKeyDown(.W) do rl.CameraMoveForward(camera,  move_speed, moveInWorldPlane=true);
-	if rl.IsKeyDown(.A) do rl.CameraMoveRight(camera,   -move_speed, moveInWorldPlane=true);
-	if rl.IsKeyDown(.S) do rl.CameraMoveForward(camera, -move_speed, moveInWorldPlane=true);
-	if rl.IsKeyDown(.D) do rl.CameraMoveRight(camera,    move_speed, moveInWorldPlane=true);
+update_camera :: proc(c: ^Camera, move_speed: f32, rotation_speed: f32, scroll_speed: f32) {
+	if rl.IsKeyDown(.W) do rl.CameraMoveForward(&c.raylib,  move_speed, moveInWorldPlane=true);
+	if rl.IsKeyDown(.A) do rl.CameraMoveRight(&c.raylib,   -move_speed, moveInWorldPlane=true);
+	if rl.IsKeyDown(.S) do rl.CameraMoveForward(&c.raylib, -move_speed, moveInWorldPlane=true);
+	if rl.IsKeyDown(.D) do rl.CameraMoveRight(&c.raylib,    move_speed, moveInWorldPlane=true);
 
+
+	if rl.IsMouseButtonPressed(.RIGHT) {
+		c.rotated_since_right_mouse_button_pressed = false
+	}
 	if rl.IsMouseButtonDown(.RIGHT) {
 		delta := rl.GetMouseDelta()
+
+		if delta != 0 {
+			c.rotated_since_right_mouse_button_pressed = true
+		}
 
 		// Hide and "freeze" mouse to allow for unlimited rotation
 		rl.HideCursor()
 		old_pos := rl.GetMousePosition() - delta
 		rl.SetMousePosition(auto_cast old_pos.x, auto_cast old_pos.y)
 
-		rl.CameraYaw(camera, delta.x * rotation_speed, rotateAroundTarget=true)
-		rl.CameraPitch(camera, delta.y * rotation_speed, lockView=true, rotateAroundTarget=true, rotateUp=false)
+		rl.CameraYaw(&c.raylib, delta.x * rotation_speed, rotateAroundTarget=true)
+		rl.CameraPitch(&c.raylib, delta.y * rotation_speed, lockView=true, rotateAroundTarget=true, rotateUp=false)
 
 	}
 	else if rl.IsMouseButtonReleased(.RIGHT) {
 		rl.ShowCursor()
 	}
-	else if rl.IsKeyDown(.Q) do rl.CameraYaw(camera, -rotation_speed, rotateAroundTarget=true)
-	else if rl.IsKeyDown(.E) do rl.CameraYaw(camera,  rotation_speed, rotateAroundTarget=true)
 
-	rl.CameraMoveToTarget(camera, -rl.GetMouseWheelMove() * scroll_speed)
+	rl.CameraMoveToTarget(&c.raylib, -rl.GetMouseWheelMove() * scroll_speed)
 }
 
