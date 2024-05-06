@@ -162,9 +162,7 @@ main :: proc() {
 			}
 		}
 
-		for &e, i in entities {
-			ecs.update(&entities[i])
-		}
+		ecs.update(filtered_entities)
 
         rl.BeginDrawing()
             rl.ClearBackground(rl.DARKGRAY)

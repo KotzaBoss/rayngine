@@ -20,7 +20,7 @@ Entity :: struct {
 	target: union{ rl.Vector3 },
 }
 
-update :: proc(e: #soa^ #soa[dynamic]Entity) {
+update_one :: proc(e: #soa^ #soa[]Entity) {
 	if target, ok := e.target.?; ok {
 		e.rigid_body.rotation = linalg.normalize(
 				linalg.quaternion_slerp(
@@ -31,6 +31,18 @@ update :: proc(e: #soa^ #soa[dynamic]Entity) {
 			)
 	}
 	e.model.raylib.transform = rb.transform(e.rigid_body) * rl.MatrixRotateXYZ(e.model.offsets.rotation * math.RAD_PER_DEG)
+}
+
+update_slice :: proc(es: #soa []Entity) {
+	es := es
+	for _, i in es {
+		update_one(&es[i])
+	}
+}
+
+update :: proc{
+	update_one,
+	update_slice,
 }
 
 draw_one :: proc(e: Entity) {
