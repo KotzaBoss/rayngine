@@ -14,7 +14,7 @@ import rl "vendor:raylib"
 
 import rg "rayngine:raygui"
 import shm "rayngine:spatial_hash_map"
-import rb "rayngine:rigid_body"
+import tr "rayngine:transform"
 import ecs "rayngine:ecs"
 import rlu "rayngine:raylibutil"
 
@@ -123,8 +123,8 @@ main :: proc() {
 
 			append_soa(&entities, ecs.Entity{
 					name=f.name,
-					rigid_body={
-							position = {auto_cast i * 50, 0, 0},
+					transform={
+							translation = {auto_cast i * 50, 0, 0},
 							rotation = linalg.quaternion_look_at(rl.Vector3{auto_cast i * 50, 0, 0}, rl.Vector3{0,100,0}, rl.Vector3{0, 1, 0}),
 							scale = 1
 						},

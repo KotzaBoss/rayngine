@@ -8,7 +8,7 @@ import "core:math"
 import "core:math/linalg"
 import "core:slice"
 
-import rb "rayngine:rigid_body"
+import tr "rayngine:transform"
 import rlu "rayngine:raylibutil"
 
 import rl "vendor:raylib"
@@ -24,7 +24,7 @@ Move_Order :: struct {
 }
 
 Context :: struct($Entity: typeid) where
-	intr.type_field_type(Entity, "rigid_body") == rb.Rigid_Body,
+	intr.type_field_type(Entity, "transform") == rl.Transform,
 	intr.type_field_type(Entity, "model") == rlu.Model,
 	intr.type_field_type(Entity, "ui") == Entity_Info
 {
@@ -61,7 +61,7 @@ update :: proc(ui: ^Context($Entity),
 				// TODO: Make it a bit more sophisticated when things start to get settled
 				clear(&ui.selection.entities)
 				for e, i in entities {
-					screen_pos := rl.GetWorldToScreen(e.rigid_body.position, ui.camera.raylib)
+					screen_pos := rl.GetWorldToScreen(e.transform.translation, ui.camera.raylib)
 					if rl.CheckCollisionPointRec(screen_pos, s) {
 						append(&ui.selection.entities, &entities[i])
 					}
@@ -69,7 +69,7 @@ update :: proc(ui: ^Context($Entity),
 			case rl.Ray:
 				clear(&ui.selection.entities)
 				for &e, i in entities {
-					if rlu.ray_model_collide(s, e.model.raylib, rb.transform(e.rigid_body)) {
+					if rlu.ray_model_collide(s, e.model.raylib, tr.transform(e.transform)) {
 						append(&ui.selection.entities, &entities[i])
 						// TODO: Resolve depth
 						break
@@ -84,12 +84,10 @@ update :: proc(ui: ^Context($Entity),
 	// rl.IsMouseButtonReleased(.LEFT) is true here
 	// If multi-selection with LEFT_ALT, make camera target the centroid of selected entities
 	if ui.mouse.selection != nil && len(ui.selection.entities) > 0 {
-		// FIXME: Make the rb.centroid(^[]#soa^ #soa[]ecs.Entity) work
-		//_, rigid_bodies, _, _ := soa_unzip(ui.selection.entities[:])
-		//ui.selection.centroid = rb.centroid(ui.selection.entities[:])
+		// FIXME: Make the tr.centroid(^[]#soa^ #soa[]ecs.Entity) work
 		ui.selection.centroid = 0
 		for e in ui.selection.entities {
-			ui.selection.centroid += e.rigid_body.position
+			ui.selection.centroid += e.transform.translation
 		}
 		ui.selection.centroid /= auto_cast len(ui.selection.entities)
 
@@ -164,7 +162,7 @@ draw :: proc(ui: Context($Entity)) {
 	}
 
 	for e in ui.selection.entities {
-		screen_pos := rl.GetWorldToScreen(e.rigid_body.position, ui.camera)
+		screen_pos := rl.GetWorldToScreen(e.transform.translation, ui.camera)
 		rl.DrawRectangleLines(
 			auto_cast (screen_pos.x - e.ui.size / 2), auto_cast (screen_pos.y - e.ui.size / 2),
 			auto_cast e.ui.size, auto_cast e.ui.size,
