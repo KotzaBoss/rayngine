@@ -69,7 +69,7 @@ update :: proc(ui: ^Context($Entity),
 			case rl.Ray:
 				clear(&ui.selection.entities)
 				for &e, i in entities {
-					if rlu.ray_model_collide(s, e.model.raylib, tr.transform(e.transform)) {
+					if rlu.ray_model_collide(s, e.model.raylib, tr.to_matrix(e.transform)) {
 						append(&ui.selection.entities, &entities[i])
 						// TODO: Resolve depth
 						break

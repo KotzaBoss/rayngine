@@ -30,7 +30,7 @@ update_one :: proc(e: #soa^ #soa[]Entity) {
 				)
 			)
 	}
-	e.model.raylib.transform = tr.transform(e.transform) * rl.MatrixRotateXYZ(e.model.offsets.rotation * math.RAD_PER_DEG)
+	e.model.raylib.transform = tr.to_matrix(e.transform) * rl.MatrixRotateXYZ(e.model.offsets.rotation * math.RAD_PER_DEG)
 }
 
 update_slice :: proc(es: #soa []Entity) {
@@ -62,7 +62,7 @@ draw :: proc{
 
 collides :: proc(using e: Entity, ray: rl.Ray) -> bool {
 	for i in 0 ..< model.raylib.meshCount {
-		collision := rl.GetRayCollisionMesh(ray, model.raylib.meshes[i], tr.transform(transform))
+		collision := rl.GetRayCollisionMesh(ray, model.raylib.meshes[i], tr.to_matrix(transform))
 		if collision.hit {
 			return true
 		}

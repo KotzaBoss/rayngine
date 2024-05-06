@@ -22,7 +22,7 @@ scale :: proc(t: rl.Transform) -> rl.Matrix {
 	return rl.MatrixScale(t.scale.x, t.scale.y, t.scale.z)
 }
 
-transform :: proc(t: rl.Transform) -> rl.Matrix {
+to_matrix :: proc(t: rl.Transform) -> rl.Matrix {
 	return translation(t) * rotation(t) * scale(t)
 }
 
