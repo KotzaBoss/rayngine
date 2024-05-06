@@ -125,10 +125,11 @@ main :: proc() {
 					name=f.name,
 					rigid_body={
 							position = {auto_cast i * 50, 0, 0},
-							rotation = {},
+							direction = {0, 0, 1},
+							rotation = linalg.quaternion_look_at(rl.Vector3{auto_cast i * 50, 0, 0}, rl.Vector3{0,100,0}, rl.Vector3{0, 1, 0}),
 							scale = 1
 						},
-					model=model,
+					model={raylib=model, offsets={ rotation={0, 180, 0} }},
 					ui=ui.make_info(rl.GetModelBoundingBox(model))
 				})
 		}
@@ -152,8 +153,19 @@ main :: proc() {
 	rl.SetTargetFPS(60)
 
     for !rl.WindowShouldClose() {
+		filtered_entities := entities[:]
 
-		update_results := ui.update(&UI, entities[:], camera={ move_speed=5.0, rotation_speed=0.01, scroll_speed=10 })
+		move_order_target := ui.update(&UI, &filtered_entities, camera={ move_speed=5.0, rotation_speed=0.01, scroll_speed=10 })
+
+		if target, ok := move_order_target.?; ok {
+			for &e in UI.selection.entities {
+				e.target = target
+			}
+		}
+
+		for &e, i in entities {
+			ecs.update(&entities[i])
+		}
 
         rl.BeginDrawing()
             rl.ClearBackground(rl.DARKGRAY)
@@ -165,8 +177,13 @@ main :: proc() {
 				rl.DrawLine3D({0, 0, 0}, {0, 3000, 0}, rl.GREEN)
 				rl.DrawLine3D({0, 0, 0}, {0, 0, 3000}, rl.BLUE)
 
-				for &entt, i in entities {
-						ecs.draw(&entt)
+				for &e, i in entities {
+					rl.DrawCylinderEx(
+						e.rigid_body.position, e.rigid_body.position + 10 * e.rigid_body.direction,
+						1, 1,
+						10,
+						rl.GOLD)
+					ecs.draw(e)
 				}
 			rl.EndMode3D()
 

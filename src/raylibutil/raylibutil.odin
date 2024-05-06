@@ -4,6 +4,13 @@ import "core:math/linalg"
 
 import rl "vendor:raylib"
 
+Model :: struct {
+	raylib: rl.Model,
+	offsets: struct {
+		rotation: [3]f32,	// In degrees TODO: Add a odinutil Degrees :: f32
+	}
+}
+
 mouse_ray :: proc(camera: rl.Camera) -> rl.Ray {
 	return rl.GetScreenToWorldRay(rl.GetMousePosition(), camera)
 }

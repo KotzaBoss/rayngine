@@ -14,7 +14,7 @@ import rlu "rayngine:raylibutil"
 import rl "vendor:raylib"
 
 Selection :: struct($Entity: typeid) {
-	entities: #soa [dynamic]Entity,		// TODO: Tweak to hold a pointer?
+	entities: [dynamic]#soa ^#soa []Entity,		// TODO: Tweak to hold a pointer?
 	centroid: rl.Vector3,
 }
 
@@ -25,7 +25,7 @@ Move_Order :: struct {
 
 Context :: struct($Entity: typeid) where
 	intr.type_field_type(Entity, "rigid_body") == rb.Rigid_Body,
-	intr.type_field_type(Entity, "model") == rl.Model,
+	intr.type_field_type(Entity, "model") == rlu.Model,
 	intr.type_field_type(Entity, "ui") == Entity_Info
 {
 	camera: Camera,
@@ -38,7 +38,6 @@ make_context :: proc($Entity: typeid, camera: rl.Camera) -> Context(Entity) {
 	return {
 		camera = Camera{ raylib=camera, rotated_since_right_mouse_button_pressed=false, focus=nil },
 		mouse = Mouse{},
-		selection = Selection(Entity) { make_soa(#soa [dynamic]Entity), {} },
 		move_order = nil,
 	}
 }
@@ -46,7 +45,7 @@ make_context :: proc($Entity: typeid, camera: rl.Camera) -> Context(Entity) {
 // Entities should already be filtered down to subset that are on screen
 @require_results
 update :: proc(ui: ^Context($Entity),
-		entities: #soa []Entity,
+		entities: ^#soa []Entity,
 		camera: struct { move_speed, rotation_speed, scroll_speed: f32, }
 	) -> (confirmed_move_order: union{ rl.Vector3 })
 {
@@ -54,22 +53,24 @@ update :: proc(ui: ^Context($Entity),
 
 
 	if ui.move_order == nil {
+		entities := entities	// Just to make the pointers taken work
+
 		update_mouse(&ui.mouse, ui.camera.raylib)
 		switch s in ui.mouse.selection {
 			case rl.Rectangle:
 				// TODO: Make it a bit more sophisticated when things start to get settled
-				clear_soa(&ui.selection.entities)
-				for e in entities {
+				clear(&ui.selection.entities)
+				for e, i in entities {
 					screen_pos := rl.GetWorldToScreen(e.rigid_body.position, ui.camera.raylib)
 					if rl.CheckCollisionPointRec(screen_pos, s) {
-						append_soa(&ui.selection.entities, e)
+						append(&ui.selection.entities, &entities[i])
 					}
 				}
 			case rl.Ray:
-				clear_soa(&ui.selection.entities)
-				for e in entities {
-					if rlu.ray_model_collide(s, e.model, rb.transform(e.rigid_body)) {
-						append_soa(&ui.selection.entities, e)
+				clear(&ui.selection.entities)
+				for &e, i in entities {
+					if rlu.ray_model_collide(s, e.model.raylib, rb.transform(e.rigid_body)) {
+						append(&ui.selection.entities, &entities[i])
 						// TODO: Resolve depth
 						break
 					}
@@ -83,9 +84,14 @@ update :: proc(ui: ^Context($Entity),
 	// rl.IsMouseButtonReleased(.LEFT) is true here
 	// If multi-selection with LEFT_ALT, make camera target the centroid of selected entities
 	if ui.mouse.selection != nil && len(ui.selection.entities) > 0 {
-		// FIXME: Remove this when UI.selection.rigid_bodies[:] can compile
-		_, rigid_bodies, _, _ := soa_unzip(ui.selection.entities[:])
-		ui.selection.centroid = rb.centroid(rigid_bodies)
+		// FIXME: Make the rb.centroid(^[]#soa^ #soa[]ecs.Entity) work
+		//_, rigid_bodies, _, _ := soa_unzip(ui.selection.entities[:])
+		//ui.selection.centroid = rb.centroid(ui.selection.entities[:])
+		ui.selection.centroid = 0
+		for e in ui.selection.entities {
+			ui.selection.centroid += e.rigid_body.position
+		}
+		ui.selection.centroid /= auto_cast len(ui.selection.entities)
 
 		if rl.IsKeyDown(.LEFT_ALT) {
 			ui.camera.focus = Camera_Focus{
