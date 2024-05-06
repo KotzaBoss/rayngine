@@ -125,7 +125,6 @@ main :: proc() {
 					name=f.name,
 					rigid_body={
 							position = {auto_cast i * 50, 0, 0},
-							direction = {0, 0, 1},
 							rotation = linalg.quaternion_look_at(rl.Vector3{auto_cast i * 50, 0, 0}, rl.Vector3{0,100,0}, rl.Vector3{0, 1, 0}),
 							scale = 1
 						},
@@ -178,11 +177,6 @@ main :: proc() {
 				rl.DrawLine3D({0, 0, 0}, {0, 0, 3000}, rl.BLUE)
 
 				for &e, i in entities {
-					rl.DrawCylinderEx(
-						e.rigid_body.position, e.rigid_body.position + 10 * e.rigid_body.direction,
-						1, 1,
-						10,
-						rl.GOLD)
 					ecs.draw(e)
 				}
 			rl.EndMode3D()
