@@ -3,7 +3,7 @@ include(CMakePrintHelpers)
 # Fetch Odin
 FetchContent_Declare(odin
 		GIT_REPOSITORY https://github.com/KotzaBoss/Odin
-		GIT_TAG vector3-perpendicular
+		GIT_TAG master
 		EXCLUDE_FROM_ALL
     )
 
