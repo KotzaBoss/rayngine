@@ -176,9 +176,7 @@ main :: proc() {
 				rl.DrawLine3D({0, 0, 0}, {0, 3000, 0}, rl.GREEN)
 				rl.DrawLine3D({0, 0, 0}, {0, 0, 3000}, rl.BLUE)
 
-				for &e, i in entities {
-					ecs.draw(e)
-				}
+				ecs.draw(filtered_entities)
 			rl.EndMode3D()
 
 			ui.draw(UI)

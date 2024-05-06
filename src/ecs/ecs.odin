@@ -33,8 +33,19 @@ update :: proc(e: #soa^ #soa[dynamic]Entity) {
 	e.model.raylib.transform = rb.transform(e.rigid_body) * rl.MatrixRotateXYZ(e.model.offsets.rotation * math.RAD_PER_DEG)
 }
 
-draw :: proc(e: Entity) {
+draw_one :: proc(e: Entity) {
 	rl.DrawModel(e.model.raylib, 0, 1, rl.WHITE)
+}
+
+draw_slice :: proc(es: #soa []Entity) {
+	for e in es {
+		draw_one(e)
+	}
+}
+
+draw :: proc{
+	draw_one,
+	draw_slice,
 }
 
 collides :: proc(using e: Entity, ray: rl.Ray) -> bool {
