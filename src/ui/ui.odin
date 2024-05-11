@@ -24,7 +24,7 @@ Move_Order :: struct {
 }
 
 Context :: struct($Entity: typeid) where
-	intr.type_field_type(Entity, "transform") == rl.Transform,
+	intr.type_field_type(Entity, "transform") == tr.Transform,
 	intr.type_field_type(Entity, "model") == rlu.Model,
 	intr.type_field_type(Entity, "ui") == Entity_Info
 {

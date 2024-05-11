@@ -124,8 +124,8 @@ main :: proc() {
 			append_soa(&entities, ecs.Entity{
 					name=f.name,
 					transform={
-							translation = {auto_cast i * 50, 0, 0},
-							rotation = linalg.quaternion_look_at(rl.Vector3{auto_cast i * 50, 0, 0}, rl.Vector3{0,100,0}, rl.Vector3{0, 1, 0}),
+							translation = {-100 + auto_cast i * 50, 0, 0},
+							forward = {0, 0, 1},
 							scale = 1
 						},
 					model={raylib=model, offsets={ rotation={0, 180, 0} }},
