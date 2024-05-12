@@ -157,7 +157,7 @@ main :: proc() {
 		move_order_target := ui.update(&UI, &filtered_entities, camera={ move_speed=5.0, rotation_speed=0.01, scroll_speed=10 })
 
 		if target, ok := move_order_target.?; ok {
-			for &e in UI.selection.entities {
+			for &e in UI.unit_selection.entities {
 				e.target = target
 			}
 		}
