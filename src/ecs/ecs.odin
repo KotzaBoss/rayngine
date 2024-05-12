@@ -24,9 +24,18 @@ Entity :: struct {
 
 update_one :: proc(e: #soa^ #soa[]Entity) {
 	if target, ok := e.target.?; ok {
+		// Rotation
 		to_target := linalg.normalize(target - e.transform.translation)
 		if linalg.angle_between(e.transform.forward, to_target) > 0.005 {
 			e.transform.forward = linalg.vector_slerp(e.transform.forward, to_target, rl.GetFrameTime() * 5)
+		}
+
+		// Move
+		angle := linalg.angle_between(e.transform.forward, to_target)
+		distance := linalg.distance(e.transform.translation, target)
+
+		if angle < math.to_radians(f32(10.0)) && distance > 10 {
+			e.transform.translation += e.transform.forward * rl.GetFrameTime() * 10
 		}
 	}
 
