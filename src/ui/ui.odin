@@ -19,8 +19,8 @@ Selection :: struct($Entity: typeid) {
 }
 
 Move_Order :: struct {
-	point: rl.Vector3,
-	radius, height: f32,
+	centroid, cursor: rl.Vector3,
+	y_offset: f32,
 }
 
 Context :: struct($Entity: typeid) where
@@ -129,7 +129,6 @@ update :: proc(ui: ^Context($Entity),
 	}
 
 
-
 	// Move Order
 
 	mo, pending := ui.move_order.?
@@ -137,11 +136,12 @@ update :: proc(ui: ^Context($Entity),
 	if !pending {	// Detect move order
 		if rl.IsMouseButtonReleased(.RIGHT) && len(ui.unit_selection.entities) > 0 && !ui.camera.rotated_since_right_mouse_button_pressed {
 			c := rlu.simple_ray_xzplane_collision(rlu.mouse_ray(ui.camera.raylib), ui.unit_selection.centroid.y)
-			ui.move_order = Move_Order{point = c.point, radius = 0, height = 0}
+			ui.move_order = Move_Order{ centroid = ui.unit_selection.centroid, cursor = c.point, }
 		}
 	}
 	else if rl.IsMouseButtonPressed(.LEFT) {	// Move order confirmed
-		confirmed_move_order = ui.move_order.?.point
+		mo := ui.move_order.?
+		confirmed_move_order = mo.cursor + {0, mo.y_offset, 0}
 		ui.move_order = nil
 	}
 	else if rl.IsMouseButtonReleased(.RIGHT) && !ui.camera.rotated_since_right_mouse_button_pressed	{	// Cancel move order
@@ -151,19 +151,23 @@ update :: proc(ui: ^Context($Entity),
 		assert(len(ui.unit_selection.entities) > 0)
 
 		if rl.IsKeyDown(.LEFT_SHIFT) {
-			pos := rl.GetMousePosition()
-			delta := rl.GetMouseDelta()
-			old_pos := pos - delta
-			rl.SetMousePosition(auto_cast old_pos.x, rl.GetMouseY())
-			// FIXME: Fix the flickering and add height to move order
+			rl.HideCursor()
+			delta := rlu.freeze_mouse()
+			// Raylibs screen axes are:
+			// ^ -y
+			// |
+			// + - > +x
+			mo.y_offset += -delta.y
+		}
+		else if rl.IsKeyReleased(.LEFT_SHIFT) {
+			rl.ShowCursor()
 		}
 
 		c := rlu.simple_ray_xzplane_collision(rlu.mouse_ray(ui.camera.raylib), ui.unit_selection.centroid.y)
-
 		if c.hit {
-			mo.point = c.point
+			mo.cursor = c.point
 		}
-		mo.radius = linalg.distance(ui.unit_selection.centroid, mo.point)
+
 		ui.move_order = mo
 	}
 
@@ -171,7 +175,7 @@ update :: proc(ui: ^Context($Entity),
 	return
 }
 
-draw :: proc(ui: Context($Entity)) {
+draw :: proc(ui: Context($Entity), entities: #soa []Entity) {
 	if s, is_rect := ui.mouse.selection.(rl.Rectangle); is_rect {
 		rl.DrawRectangleLinesEx(s, 1, rl.BLUE)
 	}
@@ -195,21 +199,52 @@ draw :: proc(ui: Context($Entity)) {
 		)
 	}
 
-	rl.BeginMode3D(ui.camera.raylib)
+	// Move Order
+	{
+		rl.BeginMode3D(ui.camera.raylib)
+
+		target_radius :: 1
+
+		// Draw active move orders
+		for e in entities {
+			if target, ok := e.target.?; ok {
+				rl.DrawLine3D(e.transform.translation, target, rl.GREEN)
+				rl.DrawCircle3D(target, target_radius, {1, 0, 0}, 90, rl.GREEN)
+			}
+		}
+
+		rl.EndMode3D()
+
+		// Draw pending move order
 		if mo, pending := ui.move_order.?; pending {
 			assert(len(ui.unit_selection.entities) > 0)
 
-			// Centroid to cursor circle
-			//rl.DrawCylinder(ui.unit_selection.centroid, mo.radius, mo.radius, 0, 100, rl.YELLOW)
-			rl.DrawCircle3D(ui.unit_selection.centroid, mo.radius, {1, 0, 0}, 90, rl.RED)
+			target := mo.cursor + {0, mo.y_offset, 0}
 
-			// Centroid to cursor line
-			rl.DrawLine3D(ui.unit_selection.centroid, mo.point, rl.RED)
+			// Draw y_offset next to target
+			y_offset_pos := rl.GetWorldToScreen(target, ui.camera.raylib)
+			rl.DrawText(rl.TextFormat("%+f", mo.y_offset), auto_cast y_offset_pos.x, auto_cast y_offset_pos.y, 30, rl.RED)
 
-			// Cursor circle
-			rl.DrawCircle3D(mo.point, 1, {1, 0, 0}, 90, rl.RED)
+					// Draw ui to cursor
+
+			rl.BeginMode3D(ui.camera.raylib)
+
+			to_target := mo.cursor - mo.centroid
+			projection_len := linalg.length(rl.Vector3{1, 0, 1} * (mo.cursor - mo.centroid))
+
+			rl.DrawCircle3D(ui.unit_selection.centroid, projection_len, {1, 0, 0}, 90, rl.RED)
+			rl.DrawLine3D(ui.unit_selection.centroid, mo.cursor, rl.RED)
+			rl.DrawCircle3D(mo.cursor, target_radius, {1, 0, 0}, 90, rl.RED)
+
+					// Draw ui to target
+
+			rl.DrawLine3D(ui.unit_selection.centroid, target, rl.RED)
+			rl.DrawLine3D(mo.cursor, target, rl.RED)
+			rl.DrawCircle3D(target, target_radius, {1, 0, 0}, 90, rl.RED)
+
+			rl.EndMode3D()
 		}
-	rl.EndMode3D()
+	}
 }
 
 delete_context :: proc(ui: Context($Entity)) {
@@ -318,16 +353,13 @@ update_camera :: proc(c: ^Camera, move_speed: f32, rotation_speed: f32, scroll_s
 		c.rotated_since_right_mouse_button_pressed = false
 	}
 	if rl.IsMouseButtonDown(.RIGHT) {
-		delta := rl.GetMouseDelta()
+		// Hide and "freeze" mouse to allow for unlimited rotation
+		rl.HideCursor()
+		delta := rlu.freeze_mouse()
 
 		if delta != 0 {
 			c.rotated_since_right_mouse_button_pressed = true
 		}
-
-		// Hide and "freeze" mouse to allow for unlimited rotation
-		rl.HideCursor()
-		old_pos := rl.GetMousePosition() - delta
-		rl.SetMousePosition(auto_cast old_pos.x, auto_cast old_pos.y)
 
 		rl.CameraYaw(&c.raylib, delta.x * rotation_speed, rotateAroundTarget=true)
 		rl.CameraPitch(&c.raylib, delta.y * rotation_speed, lockView=true, rotateAroundTarget=true, rotateUp=false)

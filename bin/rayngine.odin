@@ -177,7 +177,7 @@ main :: proc() {
 				ecs.draw(filtered_entities)
 			rl.EndMode3D()
 
-			ui.draw(UI)
+			ui.draw(UI, filtered_entities)
 
 			rl.DrawFPS(10, 10)
 
