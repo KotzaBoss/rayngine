@@ -38,3 +38,10 @@ simple_ray_xzplane_collision :: proc(ray: rl.Ray, y: f32, size: f32 = 10_000_000
 	}
 	return rl.GetRayCollisionQuad(ray, quad[0], quad[1], quad[2], quad[3])
 }
+
+freeze_mouse :: proc() -> (delta: rl.Vector2) {
+	delta = rl.GetMouseDelta()
+	old_pos := rl.GetMousePosition() - delta
+	rl.SetMousePosition(auto_cast old_pos.x, auto_cast old_pos.y)
+	return
+}
