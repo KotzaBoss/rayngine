@@ -23,6 +23,7 @@ Entity :: struct {
 }
 
 update_one :: proc(e: #soa^ #soa[]Entity) {
+	// TODO: Better "target reached" algo
 	if target, ok := e.target.?; ok {
 		// Rotation
 		to_target := linalg.normalize(target - e.transform.translation)
@@ -33,10 +34,14 @@ update_one :: proc(e: #soa^ #soa[]Entity) {
 		// Move
 		angle := linalg.angle_between(e.transform.forward, to_target)
 		distance := linalg.distance(e.transform.translation, target)
-
-		if angle < math.to_radians(f32(10.0)) && distance > 10 {
+		if angle < math.to_radians(f32(10.0)) && distance > 1 {
 			e.transform.translation += e.transform.forward * rl.GetFrameTime() * 10
 		}
+
+		if angle < 0.005 && distance < 1 {
+			e.target = nil
+		}
+		else do fmt.println(angle, distance)
 	}
 
 	e.model.raylib.transform = tr.to_matrix(e.transform)
