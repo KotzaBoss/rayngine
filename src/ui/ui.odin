@@ -311,6 +311,7 @@ Camera :: struct {
 	focus: union{ Camera_Focus }
 }
 
+// TODO: Can we remove any fields from this to cleanup the code?
 Camera_Focus  :: struct {
 	target, position: rl.Vector3,
 	distance: f32,
