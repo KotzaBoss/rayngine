@@ -249,6 +249,7 @@ draw :: proc(ui: Context($Entity), entities: #soa []Entity) {
 
 delete_context :: proc(ui: Context($Entity)) {
 	delete(ui.unit_selection.entities)
+	delete(ui.focus_selection.entities)
 }
 
 
