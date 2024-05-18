@@ -205,10 +205,24 @@ draw :: proc(ui: Context($Entity), entities: #soa []Entity) {
 
 		target_radius :: 1
 
+		draw_line_end :: proc(translation: rl.Vector3, target: rl.Vector3) -> rl.Vector3 {
+			// TODO: If target is over or under translation, the end must still be on the circle.
+			//         +----
+			//        /
+			//  \    /
+			//  ===> - - - +----
+			//       \
+			//        \
+			//         +----
+			dir := linalg.normalize(target - translation)
+			length := linalg.distance(translation, target) - target_radius
+			return translation + dir * length
+		}
+
 		// Draw active move orders
 		for e in entities {
 			if target, ok := e.target.?; ok {
-				rl.DrawLine3D(e.transform.translation, target, rl.GREEN)
+				rl.DrawLine3D(e.transform.translation, draw_line_end(e.transform.translation, target), rl.GREEN)
 				rl.DrawCircle3D(target, target_radius, {1, 0, 0}, 90, rl.GREEN)
 			}
 		}
@@ -233,12 +247,12 @@ draw :: proc(ui: Context($Entity), entities: #soa []Entity) {
 			projection_len := linalg.length(rl.Vector3{1, 0, 1} * (mo.cursor - mo.centroid))
 
 			rl.DrawCircle3D(ui.unit_selection.centroid, projection_len, {1, 0, 0}, 90, rl.RED)
-			rl.DrawLine3D(ui.unit_selection.centroid, mo.cursor, rl.RED)
+			rl.DrawLine3D(ui.unit_selection.centroid, draw_line_end(ui.unit_selection.centroid, mo.cursor), rl.RED)
 			rl.DrawCircle3D(mo.cursor, target_radius, {1, 0, 0}, 90, rl.RED)
 
 					// Draw ui to target
 
-			rl.DrawLine3D(ui.unit_selection.centroid, target, rl.RED)
+			rl.DrawLine3D(ui.unit_selection.centroid, draw_line_end(ui.unit_selection.centroid, target), rl.RED)
 			rl.DrawLine3D(mo.cursor, target, rl.RED)
 			rl.DrawCircle3D(target, target_radius, {1, 0, 0}, 90, rl.RED)
 
