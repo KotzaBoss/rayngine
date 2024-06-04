@@ -15,7 +15,7 @@ add_custom_target(h
 		COMMAND ${echo} "\t    h                    This help"
 		COMMAND ${echo} "\t    rayngine             Rayngine binary"
 		COMMAND ${echo} "\t    tests                Test everything"
-		COMMAND ${echo} "\t    test_some_package    Test only `some_package`"
+		COMMAND ${echo} "\t    test_some_file       Test only `some_file`"
 		COMMAND ${echo} "\t    rguilayout           Not ready yet"
 		COMMAND ${echo}
 
