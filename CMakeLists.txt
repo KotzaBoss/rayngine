@@ -9,6 +9,8 @@ list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 
 include(utils)
 
+include(nixos)
+
 include(kconfig)
 section("This is a ${RAYNGINE_BUILD_TYPE} build")
 
@@ -25,10 +27,4 @@ add_subdirectory(res)
 add_subdirectory(src)
 add_subdirectory(bin)
 
-
-section("Commands")
-m(NOTICE "cmake --build build -- rayngine")
-m(NOTICE "cmake --build build -- tests")
-m(NOTICE "cmake --build build -- test_some_package")
-m(NOTICE "cmake --build build -- rguilayout")
-m(NOTICE)
+include(help)

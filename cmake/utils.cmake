@@ -3,6 +3,25 @@
 # No mode means STATUS, to remove the '--' from the front
 # you need to explicitely pass NOTICE
 #
+# Will attempt to print WYSIWYG, meaning the string arguments which are by default
+# passed as a list will be treated as a single string with newlines between each individual string:
+#
+# m("abc" "def" "ghi\njkl")
+#
+# abc
+# def
+# ghi
+# jkl
+#
+# This is done to make the code a bit cleaner when making multiline explanations.
+# Consider the above example more reasonably written:
+#
+# m(WARNING
+# 	"to not break the world run:"
+# 	"    some_command args"
+# 	"If you pass X as args, it will break the world anyway"
+# 	)
+#
 function (m)
 	cmake_parse_arguments(M "" "" IF ${ARGN})
 
@@ -25,9 +44,9 @@ function (m)
 	else()
 		if (argc GREATER_EQUAL 2)
 			list(POP_FRONT M_UNPARSED_ARGUMENTS mode)
-			set(mesg "${M_UNPARSED_ARGUMENTS}")
+			string(REPLACE ";" "\n" mesg "${M_UNPARSED_ARGUMENTS}")
 		else()
-			list(APPEND modes NOTICE STATUS FATAL_ERROR VERBOSE DEPRECATION)
+			list(APPEND modes NOTICE STATUS WARNING FATAL_ERROR VERBOSE DEPRECATION)
 			if (M_UNPARSED_ARGUMENTS IN_LIST modes)
 				set(mode "${M_UNPARSED_ARGUMENTS}")
 				set(mesg "")
