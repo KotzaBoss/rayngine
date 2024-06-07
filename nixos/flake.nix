@@ -11,8 +11,14 @@
 		pkgs = nixpkgs.legacyPackages.${system};
 	in {
 		devShells.x86_64-linux.default = pkgs.mkShell {
+
+			# Test against this env variable to check if in a nix shell and
+			# DO NOT MODIFY ANYWHERE.
+			_RAYNGINE_NIX_SHELL_ACTIVE = true;
+
 			packages = with pkgs; [
 				pkg-config
+				gdb
 
 				# cmake
 				cmake
