@@ -41,6 +41,8 @@ section("fbx2gltf")
 FetchContent_MakeAvailable(fbx2gltf)
 set(FBX2GLTF ${fbx2gltf_SOURCE_DIR}/FBX2glTF-linux-x86_64)
 
+m("FBX2glTF executable: ${FBX2GLTF}")
+
 
 section("glfw")
 
