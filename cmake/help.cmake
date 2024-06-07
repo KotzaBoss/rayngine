@@ -17,6 +17,8 @@ add_custom_target(h
 		COMMAND ${echo} "\t    tests                Test everything"
 		COMMAND ${echo} "\t    test_some_file       Test only `some_file`"
 		COMMAND ${echo} "\t    rguilayout           Not ready yet"
+		COMMAND ${echo} "\t    menuconfig           Configure with Kconfig"
+		COMMAND ${echo} "\t    catconfig            Cat the Kconfig generated config file"
 		COMMAND ${echo}
 
 		DEPENDS $<$<BOOL:${NIXOS}>:h_nixos>

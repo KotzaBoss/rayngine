@@ -42,9 +42,6 @@ if (must_generate_default_config)
 			OUTPUT_QUIET
 			COMMAND_ERROR_IS_FATAL ANY
 		)
-
-	m("To customize use:")
-	m("\tcmake --build ${PROJECT_BINARY_DIR} -- menuconfig")
 endif()
 
 
