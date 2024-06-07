@@ -10,6 +10,9 @@ list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake")
 include(utils)
 
 include(nixos)
+if (NIXOS)	
+	add_subdirectory(nixos)
+endif()
 
 include(kconfig)
 section("This is a ${RAYNGINE_BUILD_TYPE} build")
