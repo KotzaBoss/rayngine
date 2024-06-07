@@ -16,9 +16,7 @@ To use them correctly:
 
 To avoid headaches, make use of cmake's SOURCE/BINARY directory variables (as you should be doing for your project anyway) and the SOURCE/BINARY directories mirror each other.
 ^0f40a2
-
-For internal details about the use of docker see [[#What]].
-# What
+# Details
 
 This setup consists of two files, a [[Dockerfile]] and a [[docker-compose.yml.in]], which are meant to always be used together by a cmake module.
 
