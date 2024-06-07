@@ -6,16 +6,13 @@ file(ARCHIVE_EXTRACT
 		DESTINATION "${RAYNGINE_MINI_SPACE_PACK_DIR}"
 	)
 
-m("Converting fbx to gltf")
-file(GLOB fbxs "${RAYNGINE_MINI_SPACE_PACK_DIR}/*.fbx")
-
-foreach (fbx IN LISTS fbxs)
-	list(APPEND commands COMMAND ${FBX2GLTF} -b "${fbx}")
-endforeach()
-
-execute_process(
-		WORKING_DIRECTORY "${RAYNGINE_MINI_SPACE_PACK_DIR}"
-		${commands}
-		OUTPUT_QUIET
-	)
-
+if (NOT NIXOS)
+	configure_file(${CMAKE_CURRENT_SOURCE_DIR}/mini_space_pack_fbx2gltf.sh.in ${RAYNGINE_MINI_SPACE_PACK_DIR}/run.sh)
+	execute_process(WORKING_DIRECTORY ${RAYNGINE_MINI_SPACE_PACK_DIR} COMMAND ./run.sh)
+else()
+	# TODO: Package all this in the nix flake?
+	nixos_docker_run(
+			WORKING_DIRECTORY ${RAYNGINE_MINI_SPACE_PACK_DIR}
+			CONFIGURE_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/mini_space_pack_fbx2gltf.sh.in
+		)
+endif()

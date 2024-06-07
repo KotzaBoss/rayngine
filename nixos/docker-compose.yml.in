@@ -1,0 +1,20 @@
+
+# As the names of the placeholder variables suggest, this infile is
+# expected to be configured with a single call to `configure_file`.
+#
+# Tweaking CMAKE_ variables is not recommended by default and thus for this infile as well.
+
+services:
+  rayngine:
+    image: rayngine
+    container_name: rayngine
+    build:
+      context: ${CMAKE_SOURCE_DIR}/nixos
+      # Just to communicate during build time
+      args:
+        CMAKE_CURRENT_BINARY_DIR: ${CMAKE_CURRENT_BINARY_DIR}
+    volumes:
+      - ${CMAKE_BINARY_DIR}:${CMAKE_BINARY_DIR}
+    environment:
+      CMAKE_BINARY_DIR: ${CMAKE_BINARY_DIR}
+      CMAKE_CURRENT_BINARY_DIR: ${CMAKE_CURRENT_BINARY_DIR}

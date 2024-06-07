@@ -1,0 +1,7 @@
+#!/bin/bash
+
+pushd ${RAYNGINE_MINI_SPACE_PACK_DIR}
+for f in *.fbx; do
+	${FBX2GLTF} -b $f
+done
+popd
