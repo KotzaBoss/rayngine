@@ -35,8 +35,8 @@ The reason the paths were kept the same is that the file configurations *will ju
 ```
 my_project
 	|--- res
-			|--- script.sh.in
-			|--- some_assets.zip
+		|--- script.sh.in
+		|--- some_assets.zip
 ```
 If we make use of the cmake variables in our configuration:
 ```
@@ -52,8 +52,8 @@ my_project
 			|--- run.sh
 			|--- some_assets
 	|--- res
-			|--- script.sh.in
-			|--- some_assets.zip
+		|--- script.sh.in
+		|--- some_assets.zip
 ```
 Then a script:
 ```sh
