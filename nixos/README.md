@@ -26,10 +26,10 @@ What the `nixos_run` function does is:
 - Call `docker compose build` in the `WORKING_DIRECTORY`
 - Call `docker compose up` in the `WORKING_DIRECTORY`
 
-The "interesting" part of all that the configuration uses the callers `CMAKE_*` variables to setup the container's environment and more importantly the volume for rayngine's build directory.
+The "interesting" part of all that the `docker-compose.yml.in` uses the callers `CMAKE_*` variables to setup the container's environment and more importantly the volume for rayngine's build directory.
 When the container is up the `CMAKE_BINARY_DIR` will be mounted *as the same path* in the container. For example, both our host and the container will have the same, `/home/user/git/rayngine/build`path.
 
-The reason the paths were kept the same is that the file configurations will *just work*™ with the cmake variables. Elaborating on how [[#^0f40a2|"to avoid headaches"]], assume this simplified setup:
+The reason the paths were kept the same is that the file configurations will *just work*™ with the cmake variables. Elaborating on how to [[#^0f40a2|"avoid headaches"]], assume this simplified setup:
 ```
 my_project
 	|- res
@@ -86,13 +86,13 @@ my_project
 		|- some_assets.zip
 	|- deps
 ```
-Running the `run.sh` script will then *just work*™️.
+Running the `run.sh` script will then *just work*™️, since both the script and docker are configured with the same absolute paths.
 
-You could argue that it is possible to circumvent the configuring of the script by making the convention that it is always dumped in the directory it should be doing work. For our example, we could just copy the script into the `SOME_ASSET_BUILD_DIR` and remove the `pushd`/`popd` since we are already in the directory of the assets.
+You could argue that we could just dump the script in the directory it should be doing work. For our example, we could just copy the script into the `SOME_ASSET_BUILD_DIR` and remove the `pushd`/`popd` since we are already in the directory of the assets (that will be mounted in the container).
 
-That is true but i find my setup of configuring files and maintaining a build that strictly mirrors the source to be more *predictable*, *explicit*, and implicitely, *flexible*.
-- *Predictable*: there are no surprises in the placement of files during configuration.
+That is true but i find my setup of configuring files and maintaining a build that strictly mirrors the source to be more *predictable*, *explicit*, and implicitly, *flexible*.
+- *Predictable*: there are no surprises in the placement of files during configuration, [WYSIWYG](https://en.wikipedia.org/wiki/WYSIWYG).
 - *Explicit*: each "work unit" has to... explicitely define its configuration dependencies.
-- *Flexible*: as a result of proper configuration, each "work unit" can operate from anywhere.
+- *Flexible*: as a result of proper configuration, each "work unit" can operate on the build directory from anywhere.
 
 While the accidental flexibility can be considered a "happy little accident", the first two points give a promise of reduced mental load for future changes and bugs.
