@@ -14,24 +14,15 @@ choice BUILD
         bool "Release"
 endchoice
 
-config BUILD_TYPE
-	# Omitting the prompt makes it invisible to the user
-	# and can be configured implicitely through other configs.
-	string
-	default "Debug" if BUILD_DEBUG
-	default "Release" if BUILD_RELEASE
-
 
 menu "Sanitizers"
 	choice SANITIZE_MEMORY_CHOICE
 		prompt "Sanatize memory"
+		optional
 		help
 			Unfortunately the name of one of the "memory" sanitizers is "Memory sanitizer"...
 			Ignoring that, either "Memory" or "Address" sanitizer can be used not both.
 			See their "help" for details.
-
-		config SANITIZE_MEMORY_NONE
-			bool "None"
 
 		config SANITIZE_ADDRESS
 			bool "Address sanitizer"

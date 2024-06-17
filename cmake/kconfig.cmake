@@ -18,19 +18,28 @@ add_custom_target(menuconfig
 add_custom_target(catconfig COMMAND cmake -E cat ${.config})
 
 
-# Check if .config exists or we changed Kconfig
+		# Check .config exists and Kconfig hashes
+
 file(MD5 ${KCONFIG_FILE} kconfig_file_hash)
 set(RAYNGINE_KCONFIG_HASH ${kconfig_file_hash} CACHE STRING "Hash of the Kconfig file")	# Will not overwrite if exists
 
 if (NOT EXISTS ${.config})
-	set(must_generate_config TRUE)
-elseif (NOT $CACHE{RAYNGINE_KCONFIG_HASH} STREQUAL kconfig_file_hash)
-	set(must_generate_config TRUE)
-	file(REMOVE ${.config})
-	set(RAYNGINE_KCONFIG_HASH ${kconfig_file_hash} CACHE STRING "Hash of the Kconfig file" FORCE)
+	set(must_generate_default_config TRUE)
+else()
+	file(MD5 ${.config} .config_file_hash)
+	set(RAYNGINE_GENERATED_CONFIG_HASH ${.config_file_hash} CACHE STRING "Hash for .config")	# Will not overwrite if exists
+
+	if ((NOT $CACHE{RAYNGINE_KCONFIG_HASH} STREQUAL kconfig_file_hash)
+		OR (NOT $CACHE{RAYNGINE_GENERATED_CONFIG_HASH} STREQUAL .config_file_hash))
+
+		set(must_generate_default_config TRUE)
+		file(REMOVE ${.config})
+		set(RAYNGINE_KCONFIG_HASH ${kconfig_file_hash} CACHE STRING "Hash of the Kconfig file" FORCE)
+		set(RAYNGINE_GENERATED_CONFIG_HASH ${.config_file_hash} CACHE STRING "Hash for .config" FORCE)
+	endif()
 endif()
 
-if (must_generate_config)
+if (must_generate_default_config)
 	section("Generating .config")
 
 	set(ENV{CONFIG_} ${CONFIG_})
@@ -83,6 +92,19 @@ foreach (line IN LISTS config)
 	set(${key} ${value} CACHE ${type} "" FORCE)
 
 endforeach()
+
+
+# Build type
+if (RAYNGINE_BUILD_DEBUG AND RAYNGINE_BUILD_RELEASE)
+	m(FATAL_ERROR "Must choose either debug or release build")
+elseif (RAYNGINE_BUILD_DEBUG)
+	set(RAYNGINE_BUILD_TYPE "Debug")
+elseif (RAYNGINE_BUILD_DEBUG)
+	set(RAYNGINE_BUILD_TYPE "Release")
+else()
+	m(FATAL_ERROR "Build type has not been specified")
+endif()
+
 
 # Collect all config variables
 get_cmake_property(RAYNGINE_VARIABLES CACHE_VARIABLES)
