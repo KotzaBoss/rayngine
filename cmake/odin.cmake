@@ -35,8 +35,9 @@ add_custom_command(
 
 # Odin arguments
 
-# ODIN_DEFINES
-foreach (v ${RAYNGINE_VARIABLES})
+		# ODIN_DEFINES
+
+foreach (v IN LISTS RAYNGINE_VARIABLES)
 	set(key ${v})
 	set(value ${${v}})
 	if (${value} STREQUAL "y")
@@ -49,7 +50,9 @@ foreach (v ${RAYNGINE_VARIABLES})
 endforeach()
 list(TRANSFORM ODIN_DEFINES PREPEND "-define:")
 
-# ODIN_FLAGS
+
+		# ODIN_FLAGS
+
 if (RAYNGINE_ODIN_COLLECTION)
 	list(APPEND ODIN_FLAGS "-collection:rayngine=${RAYNGINE_ODIN_COLLECTION}")
 endif()
@@ -58,7 +61,23 @@ if (RAYNGINE_BUILD_DEBUG)
 	list(APPEND ODIN_FLAGS "-debug")
 endif()
 
-# ODIN_ARGS
+
+# Sanatizers
+if (RAYNGINE_SANITIZE_MEMORY AND RAYNGINE_SANITIZE_ADDRESS)
+	m(FATAL_ERROR [[Cannot set both "memory" and "address" sanitizer.]])
+elseif (RAYNGINE_SANITIZE_MEMORY)
+	list(APPEND ODIN_FLAGS "-sanitize:memory")
+elseif (RAYNGINE_SANITIZE_ADDRESS)
+	list(APPEND ODIN_FLAGS "-sanitize:address")
+endif()
+
+if (RAYNGINE_SANITIZE_THREAD)
+	list(APPEND ODIN_FLAGS "-sanitize:thread")
+endif()
+
+
+		# ODIN_ARGS
+
 set(ODIN_ARGS ${ODIN_DEFINES} ${ODIN_FLAGS})
 
 

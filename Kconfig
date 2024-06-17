@@ -1,7 +1,5 @@
 mainmenu "Project Configuration"
 
-comment "Do not neglect to confirm your changes have taken effect"
-
 
 config VERBOSE
 	bool "Verbose"
@@ -22,6 +20,36 @@ config BUILD_TYPE
 	string
 	default "Debug" if BUILD_DEBUG
 	default "Release" if BUILD_RELEASE
+
+
+menu "Sanitizers"
+	choice SANITIZE_MEMORY_CHOICE
+		prompt "Sanatize memory"
+		help
+			Unfortunately the name of one of the "memory" sanitizers is "Memory sanitizer"...
+			Ignoring that, either "Memory" or "Address" sanitizer can be used not both.
+			See their "help" for details.
+
+		config SANITIZE_MEMORY_NONE
+			bool "None"
+
+		config SANITIZE_ADDRESS
+			bool "Address sanitizer"
+			help
+				https://github.com/google/sanitizers/wiki/AddressSanitizer
+
+		config SANITIZE_MEMORY
+			bool "Memory sanitizer"
+			help
+				https://github.com/google/sanitizers/wiki/MemorySanitizer
+	endchoice
+
+
+	config SANITIZE_THREAD
+		bool "Thread sanatizer"
+		help
+			https://github.com/google/sanitizers/wiki/ThreadSanitizerCppManual
+endmenu
 
 
 config ODIN_COLLECTION

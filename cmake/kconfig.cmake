@@ -19,21 +19,19 @@ add_custom_target(catconfig COMMAND cmake -E cat ${.config})
 
 
 # Check if .config exists or we changed Kconfig
-set(RAYNGINE_KCONFIG_HASH_TYPE MD5 CACHE STRING "Hash type for Kconfig file")
-file(${RAYNGINE_KCONFIG_HASH_TYPE} ${KCONFIG_FILE} kconfig_file_hash)
-
-set(RAYNGINE_KCONFIG_HASH ${kconfig_file_hash} CACHE STRING "Hash of the Kconfig file")
+file(MD5 ${KCONFIG_FILE} kconfig_file_hash)
+set(RAYNGINE_KCONFIG_HASH ${kconfig_file_hash} CACHE STRING "Hash of the Kconfig file")	# Will not overwrite if exists
 
 if (NOT EXISTS ${.config})
-	set(must_generate_default_config TRUE)
+	set(must_generate_config TRUE)
 elseif (NOT $CACHE{RAYNGINE_KCONFIG_HASH} STREQUAL kconfig_file_hash)
-	set(must_generate_default_config TRUE)
+	set(must_generate_config TRUE)
 	file(REMOVE ${.config})
 	set(RAYNGINE_KCONFIG_HASH ${kconfig_file_hash} CACHE STRING "Hash of the Kconfig file" FORCE)
 endif()
 
-if (must_generate_default_config)
-	section("Generating default .config")
+if (must_generate_config)
+	section("Generating .config")
 
 	set(ENV{CONFIG_} ${CONFIG_})
 	execute_process(
@@ -45,7 +43,8 @@ if (must_generate_default_config)
 endif()
 
 
-# Parse .config and set CMake variables
+		# Parse .config and set CMake variables
+
 file(STRINGS ${.config} config)
 if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.29)
 	message(DEPRECATION
