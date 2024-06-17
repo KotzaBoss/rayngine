@@ -41,7 +41,7 @@ section("fbx2gltf")
 FetchContent_MakeAvailable(fbx2gltf)
 set(FBX2GLTF ${fbx2gltf_SOURCE_DIR}/FBX2glTF-linux-x86_64)
 
-m("FBX2glTF executable: ${FBX2GLTF}")
+message(STATUS "FBX2glTF executable: ${FBX2GLTF}")
 
 
 section("glfw")
@@ -50,7 +50,7 @@ FetchContent_GetProperties(glfw)
 if (NOT glfw_POPULATED)
 	FetchContent_Populate(glfw)
 
-	m("Tweaking build options (GLFW_USE_WAYLAND, GLFW_BUILD_WAYLAND/X11)")
+	message(STATUS "Tweaking build options (GLFW_USE_WAYLAND, GLFW_BUILD_WAYLAND/X11)")
 	unset(GLFW_USE_WAYLAND CACHE)
 	set(GLFW_BUILD_WAYLAND ON)
 	set(GLFW_BUILD_X11 ON)
@@ -59,5 +59,5 @@ endif()
 
 # Report
 section("FetchContent report")
-m("Root directory: ${FETCHCONTENT_BASE_DIR}")
+message(STATUS "Root directory: ${FETCHCONTENT_BASE_DIR}")
 

@@ -15,7 +15,7 @@ foreach (gui.h ${guis})
 	if (NOT match)
 		message(FATAL_ERROR "Pattern ${regex} does not match file ${gui.h}")
 	else()
-		m("${gui.h}")
+		message(STATUS "${gui.h}")
 	endif()
 
 	cmake_path(GET gui.h STEM gui)

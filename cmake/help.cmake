@@ -39,8 +39,8 @@ add_custom_target(h_nixos
 	)
 
 
-m(WARNING
-		"Make sure you run:"
-		"\tcmake --build build -- h"
-		"for information before hacking away."
+message(WARNING
+		"Make sure you run:\n"
+		"\tcmake --build build -- h\n"
+		"for information before hacking away.\n"
 	)

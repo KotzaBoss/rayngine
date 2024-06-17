@@ -57,7 +57,7 @@ endif()
 file(STRINGS ${.config} config)
 if (CMAKE_VERSION VERSION_GREATER_EQUAL 3.29)
 	message(DEPRECATION
-			"Refactor the Kconfig regex parsing to be included in the file command."
+			"Refactor the Kconfig regex parsing to be included in the file command.\n"
 			"Since version 3.29 this will populate the CMAKE_MATCH_* variables\n"
 			"file(STRINGS ... REGEX \"...\")\n"
 		)
@@ -96,13 +96,13 @@ endforeach()
 
 # Build type
 if (RAYNGINE_BUILD_DEBUG AND RAYNGINE_BUILD_RELEASE)
-	m(FATAL_ERROR "Must choose either debug or release build")
+	message(FATAL_ERROR "Must choose either debug or release build")
 elseif (RAYNGINE_BUILD_DEBUG)
 	set(RAYNGINE_BUILD_TYPE "Debug")
 elseif (RAYNGINE_BUILD_DEBUG)
 	set(RAYNGINE_BUILD_TYPE "Release")
 else()
-	m(FATAL_ERROR "Build type has not been specified")
+	message(FATAL_ERROR "Build type has not been specified")
 endif()
 
 

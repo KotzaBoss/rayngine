@@ -9,13 +9,13 @@ function (nixos_run script)
 
 	configure_file(${script} ${CMAKE_CURRENT_BINARY_DIR}/run.sh FILE_PERMISSIONS OWNER_EXECUTE)
 
-	m("Building docker image, this may take a few moments...")
+	message(STATUS "Building docker image, this may take a few moments...")
 	execute_process(
 			WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
 			COMMAND ${DOCKER} compose build -q
 		)
 
-	m("Launching docker container to convert fbx to gltf")
+	message(STATUS "Launching docker container to convert fbx to gltf")
 	execute_process(
 			WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
 			COMMAND ${DOCKER} compose up

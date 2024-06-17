@@ -1,6 +1,6 @@
 section("Mini space pack")
 
-m("Extracting zip")
+message(STATUS "Extracting zip")
 file(ARCHIVE_EXTRACT
 		INPUT "${CMAKE_CURRENT_SOURCE_DIR}/Mini space pack.zip"
 		DESTINATION "${RAYNGINE_MINI_SPACE_PACK_DIR}"

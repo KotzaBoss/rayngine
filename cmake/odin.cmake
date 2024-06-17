@@ -11,11 +11,11 @@ section("Odin")
 
 FetchContent_MakeAvailable(odin)
 
-m("Source dir: ${odin_SOURCE_DIR}")
+message(STATUS "Source dir: ${odin_SOURCE_DIR}")
 
 # Prepare odin executable
 set(ODIN ${odin_SOURCE_DIR}/odin CACHE PATH "Odin executable path")
-m("Executable: ${ODIN}")
+message(STATUS "Executable: ${ODIN}")
 
 # Only way i found to make sure odin is compiled once.
 # Other targets should `DEPEND odin`
@@ -64,7 +64,7 @@ endif()
 
 # Sanatizers
 if (RAYNGINE_SANITIZE_MEMORY AND RAYNGINE_SANITIZE_ADDRESS)
-	m(FATAL_ERROR [[Cannot set both "memory" and "address" sanitizer.]])
+	message(FATAL_ERROR [[Cannot set both "memory" and "address" sanitizer.]])
 elseif (RAYNGINE_SANITIZE_MEMORY)
 	list(APPEND ODIN_FLAGS "-sanitize:memory")
 elseif (RAYNGINE_SANITIZE_ADDRESS)
@@ -83,6 +83,6 @@ set(ODIN_ARGS ${ODIN_DEFINES} ${ODIN_FLAGS})
 
 section("Odin arguments")
 foreach (a IN LISTS ODIN_ARGS)
-	m("${a}")
+	message(STATUS "${a}")
 endforeach()
 
