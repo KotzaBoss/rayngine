@@ -22,6 +22,8 @@
 
 				# cmake
 				cmake
+				cmakeWithGui
+				cmakeCurses
 				ninja
 
 				# kconfig
