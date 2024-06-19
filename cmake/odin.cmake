@@ -38,16 +38,19 @@ add_custom_command(
 		# ODIN_DEFINES
 
 foreach (v IN LISTS RAYNGINE_VARIABLES)
-	set(key ${v})
-	set(value ${${v}})
-	if (${value} STREQUAL "y")
-		list(APPEND ODIN_DEFINES "${key}=true")
-	elseif (${value} STREQUAL "n")
-		list(APPEND ODIN_DEFINES "${key}=false")
+	get_property(type CACHE ${v} PROPERTY TYPE)
+	if (type STREQUAL BOOL)
+		if (value)
+			list(APPEND ODIN_DEFINES "${v}=true")
+		else()
+			list(APPEND ODIN_DEFINES "${v}=false")
+		endif()
 	else()
-		list(APPEND ODIN_DEFINES "${key}=\"${value}\"")
+		get_property(value CACHE ${v} PROPERTY VALUE)
+		list(APPEND ODIN_DEFINES "${v}=\"${value}\"")
 	endif()
 endforeach()
+
 list(TRANSFORM ODIN_DEFINES PREPEND "-define:")
 
 
@@ -57,18 +60,14 @@ if (RAYNGINE_ODIN_COLLECTION)
 	list(APPEND ODIN_FLAGS "-collection:rayngine=${RAYNGINE_ODIN_COLLECTION}")
 endif()
 
-if (RAYNGINE_BUILD_DEBUG)
+if (RAYNGINE_BUILD_TYPE STREQUAL "Debug")
 	list(APPEND ODIN_FLAGS "-debug")
 endif()
 
 
 # Sanatizers
-if (RAYNGINE_SANITIZE_MEMORY AND RAYNGINE_SANITIZE_ADDRESS)
-	message(FATAL_ERROR [[Cannot set both "memory" and "address" sanitizer.]])
-elseif (RAYNGINE_SANITIZE_MEMORY)
-	list(APPEND ODIN_FLAGS "-sanitize:memory")
-elseif (RAYNGINE_SANITIZE_ADDRESS)
-	list(APPEND ODIN_FLAGS "-sanitize:address")
+if (RAYNGINE_SANITIZE_MEMORY)
+	list(APPEND ODIN_FLAGS "-sanitize:${RAYNGINE_SANITIZE_MEMORY}")
 endif()
 
 if (RAYNGINE_SANITIZE_THREAD)

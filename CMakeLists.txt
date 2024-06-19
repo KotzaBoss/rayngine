@@ -14,10 +14,8 @@ if (NIXOS)
 	add_subdirectory(nixos)
 endif()
 
-include(kconfig)
+include(config)
 section("This is a ${RAYNGINE_BUILD_TYPE} build")
-
-set(CMAKE_BUILD_TYPE ${RAYNGINE_BUILD_TYPE})
 
 if (RAYNGINE_VERBOSE)
 	set(CMAKE_MESSAGE_LOG_LEVEL VERBOSE)
