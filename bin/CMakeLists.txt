@@ -4,7 +4,7 @@ add_custom_target(rayngine
 			${CMAKE_CURRENT_SOURCE_DIR}
 			-out:${CMAKE_CURRENT_BINARY_DIR}/rayngine
 			${ODIN_ARGS}
-		DEPENDS odin
+		DEPENDS odin res
 		COMMENT "Building rayngine: ${CMAKE_CURRENT_BINARY_DIR}/rayngine"
 	)
 
