@@ -8,7 +8,11 @@ file(ARCHIVE_EXTRACT
 
 if (NOT NIXOS)
 	configure_file(${CMAKE_CURRENT_SOURCE_DIR}/mini_space_pack_fbx2gltf.sh.in ${CMAKE_CURRENT_BINARY_DIR}/run.sh)
-	execute_process(WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR} COMMAND ./run.sh)
+	add_custom_target(res
+			WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+			COMMAND ./run.sh
+			COMMENT "Preparing Mini space pack"
+		)
 else()
 	# Cmake in script mode doesnt inherit the cache, so prepare the files from here
 	configure_file(${CMAKE_CURRENT_SOURCE_DIR}/mini_space_pack_fbx2gltf.sh.in ${CMAKE_CURRENT_BINARY_DIR}/mini_space_pack_fbx2gltf.sh)
@@ -17,6 +21,6 @@ else()
 		COMMAND ${CMAKE_COMMAND} -P ${CMAKE_SOURCE_DIR}/cmake/nixos.cmake --
 			${CMAKE_CURRENT_BINARY_DIR}/docker-compose.yml
 			${CMAKE_CURRENT_BINARY_DIR}/mini_space_pack_fbx2gltf.sh
-			${CMAKE_CURRENT_BINARY_DIR}
+		COMMENT "Preparing Mini space pack"
 		)
 endif()

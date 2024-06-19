@@ -11,7 +11,7 @@ To use them correctly:
 - Add the nixos cmake module
 - Call the imported function:
 	```cmake
-	nixos_run(${CMAKE_CURRENT_SOURCE_DIR}/.../script.sh.in)
+	nixos_run(.../docker-compose.yml .../script.sh)
 	```
 
 To avoid headaches, make use of cmake's SOURCE/BINARY directory variables (as you should be doing for your project anyway) and the SOURCE/BINARY directories mirror each other.
@@ -21,8 +21,8 @@ To avoid headaches, make use of cmake's SOURCE/BINARY directory variables (as yo
 This setup consists of two files, a [[Dockerfile]] and a [[docker-compose.yml.in]], which are meant to always be used together by a cmake module.
 
 What the `nixos_run` function does is:
-- Configure the `docker-compose.yml.in` into to the caller's `CMAKE_CURRENT_BINARY_DIR`
-- Configure the `CONFIGURE_SCRIPT` into to the caller's `CMAKE_CURRENT_BINARY_DIR`
+- Configure the `docker-compose.yml` into to the caller's `CMAKE_CURRENT_BINARY_DIR`
+- Configure the `script.sh` into to the caller's `CMAKE_CURRENT_BINARY_DIR`
 - Call `docker compose build` in the `WORKING_DIRECTORY`
 - Call `docker compose up` in the `WORKING_DIRECTORY`
 
