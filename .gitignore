@@ -1,4 +1,5 @@
 build
+.build
 imgui.ini
 .gdbinit
 tags
@@ -6,6 +7,8 @@ rnr*.json
 _sandbox
 heaptrack.*
 .obsidian/workspace.json
+.obsidian/graph.json
+.obsidian/appearance.json
 
 # Created by https://www.toptal.com/developers/gitignore/api/c++
 # Edit at https://www.toptal.com/developers/gitignore?templates=c++
@@ -53,7 +56,7 @@ heaptrack.*
 CMakeLists.txt.user
 CMakeCache.txt
 CMakeFiles
-CMakeScripts
+CMakeScript
 Testing
 Makefile
 cmake_install.cmake

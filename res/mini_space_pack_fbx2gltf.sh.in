@@ -2,6 +2,6 @@
 
 pushd ${RAYNGINE_MINI_SPACE_PACK_DIR}
 for f in *.fbx; do
-	${FBX2GLTF} -b $f
+	${HOOTOOLS_FBX2GLTF_PROGRAM} -b $f
 done
 popd

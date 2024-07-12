@@ -3,5 +3,6 @@
   "showUnsupportedFiles": true,
   "userIgnoreFilters": [
     "build/"
-  ]
+  ],
+  "readableLineLength": false
 }

@@ -1,5 +1,0 @@
-function (section s)
-	message("")
-	message(STATUS "\t${s}")
-	message(STATUS)
-endfunction()

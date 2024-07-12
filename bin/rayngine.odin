@@ -12,13 +12,11 @@ import "core:mem"
 
 import rl "vendor:raylib"
 
-import rg "rayngine:raygui"
-import shm "rayngine:spatial_hash_map"
-import tr "rayngine:transform"
-import ecs "rayngine:ecs"
-import rlu "rayngine:raylibutil"
+import game "hootools:game"
+import ecs "hootools:ecs"
+import rlu "hootools:raylib"
 
-import "rayngine:ui"
+//import "rayngine:ui"
 
 
 main :: proc() {
@@ -53,7 +51,13 @@ main :: proc() {
 
 	rl.rlSetClipPlanes(rl.RL_CULL_DISTANCE_NEAR, 100000)
 
-	entities := make_soa(#soa [dynamic]ecs.Entity, 0, 100)
+	ECS := ecs.make(100)
+	defer ecs.delete(ECS)
+
+	ecs.register(&ECS, rl.Model)
+	ecs.register(&ECS, game.Transform)
+
+	entities := make([dynamic]ecs.Entity, 0, 100)
 	entities.allocator = mem.panic_allocator()
 
 	{
@@ -61,7 +65,7 @@ main :: proc() {
 		mini :: #config(RAYNGINE_MINI_SPACE_PACK_DIR, "")
 		fd, ok1 := os.open(mini)
 		defer os.close(fd)
-		assert(ok1 == 0)	// Is this idiomatic? what if multiplefunctions return the same error type?
+		fmt.assertf(ok1 == 0, "Error opening: {}", mini)	// Is this idiomatic? what if multiplefunctions return the same error type?
 
 		files, ok2 := os.read_dir(fd, 0)
 		defer delete(files)
@@ -70,21 +74,32 @@ main :: proc() {
 		files = slice.filter(files, proc(f: os.File_Info) -> bool { return filepath.ext(f.name) == ".glb" })
 
 		for f, i in files {
-			fullpath := strings.clone_to_cstring(f.fullpath)
-			defer delete(fullpath)
+			e, ok := ecs.create(&ECS)
+			assert(ok)
 
-			model := rl.LoadModel(fullpath)
+			{
+				ecs.compose(&ECS, e, game.Transform)
+				transform, _ := ecs.component(ECS, e, game.Transform)
+				transform^ = {
+						translation = {-100 + auto_cast i * 50, 0, 0},
+						forward = {0, 0, 1},
+						scale = 1
+					}
+			}
 
-			append_soa(&entities, ecs.Entity{
-					name=f.name,
-					transform={
-							translation = {-100 + auto_cast i * 50, 0, 0},
-							forward = {0, 0, 1},
-							scale = 1
-						},
-					model={raylib=model, offsets={ rotation={0, 180, 0} }},
-					ui=ui.make_info(rl.GetModelBoundingBox(model))
-				})
+			{
+				ecs.compose(&ECS, e, rl.Model)
+				model, _ := ecs.component(ECS, e, rl.Model)
+				fullpath := strings.clone_to_cstring(f.fullpath)
+				defer delete(fullpath)
+
+				model^ = rl.LoadModel(fullpath)
+
+				transform, _ := ecs.component(ECS, e, game.Transform)
+				model.transform = game.to_matrix(transform^)
+			}
+
+			append(&entities, e)
 		}
 	}
 	defer {
@@ -92,46 +107,37 @@ main :: proc() {
 		delete(entities)
 	}
 
-	UI := ui.make_context(ecs.Entity,
-			rl.Camera3D{
-				position={0, 50, 50},
-				target=0,
-				up={0, 1, 0},
-				fovy=60.0,
-				projection=.PERSPECTIVE
-			}
-		)
-	defer ui.delete_context(UI)
+
+	camera := 	rl.Camera3D{
+			position={0, 50, 50},
+			target=0,
+			up={0, 1, 0},
+			fovy=60.0,
+			projection=.PERSPECTIVE
+		}
 
 	rl.SetTargetFPS(60)
 
     for !rl.WindowShouldClose() {
-		filtered_entities := entities[:]
-
-		move_order_target := ui.update(&UI, &filtered_entities, camera={ move_speed=5.0, rotation_speed=0.01, scroll_speed=10 })
-
-		if target, ok := move_order_target.?; ok {
-			for &e in UI.unit_selection.entities {
-				e.target = target
-			}
-		}
-
-		ecs.update(filtered_entities)
+		rl.UpdateCamera(&camera, .THIRD_PERSON)
 
         rl.BeginDrawing()
             rl.ClearBackground(rl.DARKGRAY)
 
-			rl.BeginMode3D(UI.camera)
+			rl.BeginMode3D(camera)
 				rl.DrawGrid(1000, 1000)
 
 				rl.DrawLine3D({0, 0, 0}, {3000, 0, 0}, rl.RED)
 				rl.DrawLine3D({0, 0, 0}, {0, 3000, 0}, rl.GREEN)
 				rl.DrawLine3D({0, 0, 0}, {0, 0, 3000}, rl.BLUE)
 
-				ecs.draw(filtered_entities)
-			rl.EndMode3D()
+				for e in entities {
+					model, err := ecs.component(ECS, e, rl.Model)
+					assert(err == .None)
+					rl.DrawModel(model^, 0, 1, rl.WHITE)
+				}
 
-			ui.draw(UI, filtered_entities)
+			rl.EndMode3D()
 
 			rl.DrawFPS(10, 10)
 

@@ -2,15 +2,13 @@ package ecs
 
 import "core:math"
 import "core:math/linalg"
-import linalgutil "rayngine:odinutil/math/linalg"
 import "core:fmt"
 
 import tr "rayngine:transform"
 import "rayngine:ui"
 
 import rl "vendor:raylib"
-import rlu "rayngine:raylibutil"
-import linalgu "rayngine:odinutil/math/linalg"
+import rlu "hootools:raylibutil"
 
 import intr "base:intrinsics"
 
