@@ -1,0 +1,1 @@
+- [ ] Make custom camera work for NixOS ⏫ 

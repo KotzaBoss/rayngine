@@ -3,6 +3,7 @@ This file is expected to be viewed with [Obsidian](https://obsidian.md) using th
 # All
 ```tasks
 not done
+group by folder
 ```
 
 # Done
