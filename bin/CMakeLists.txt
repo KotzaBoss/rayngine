@@ -7,7 +7,7 @@ add_odin_executable(rayngine ${CMAKE_CURRENT_SOURCE_DIR}
 		EXTRA_ARGS
 			-out:${CMAKE_CURRENT_BINARY_DIR}/rayngine
 			-collection:rayngine=${CMAKE_SOURCE_DIR}/src
-		DEPENDS odin res
+		DEPENDS odin
 		COMMENT "Building rayngine: ${CMAKE_CURRENT_BINARY_DIR}/rayngine"
 	)
 
