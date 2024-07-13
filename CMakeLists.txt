@@ -13,7 +13,7 @@ include(hootools)
 # So we get hootools first and when cmake builds it error with
 # the suggestion to `nix develop` the hootools nixos flake and then continue.
 enable_language(C)
-
+enable_testing()
 
 include(utils)
 include(config)
@@ -24,7 +24,7 @@ section("This is a ${RAYNGINE_BUILD_TYPE} build")
 add_subdirectory(res)
 add_subdirectory(src)
 add_subdirectory(bin)
-#add_subdirectory(test)
+add_subdirectory(test)
 
 include(help)
 
