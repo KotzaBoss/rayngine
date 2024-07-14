@@ -43,6 +43,10 @@ main :: proc() {
 		}
 	}
 
+	// Logging
+	context.logger = log.create_console_logger()
+	defer log.destroy_console_logger(context.logger)
+
 
 	//////////////////////////////////////////////////////////////////////////////////
 
