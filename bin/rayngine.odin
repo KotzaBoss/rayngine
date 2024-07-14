@@ -16,8 +16,7 @@ import game "hootools:game"
 import ecs "hootools:ecs"
 import rlu "hootools:raylib"
 
-//import "rayngine:ui"
-
+import "rayngine:ui"
 
 main :: proc() {
 	// Track leaks: https://odin-lang.org/docs/overview/#when-statements
@@ -111,24 +110,25 @@ main :: proc() {
 		delete(entities)
 	}
 
-
-	camera := 	rl.Camera3D{
-			position={0, 50, 50},
-			target=0,
-			up={0, 1, 0},
-			fovy=60.0,
-			projection=.PERSPECTIVE
-		}
+	UI := ui.make(
+			rl.Camera3D{
+				position={0, 50, 50},
+				target=0,
+				up={0, 1, 0},
+				fovy=60.0,
+				projection=.PERSPECTIVE
+			}
+		)
 
 	rl.SetTargetFPS(60)
 
     for !rl.WindowShouldClose() {
-		rl.UpdateCamera(&camera, .THIRD_PERSON)
+		ui.update(&UI, ECS)
 
         rl.BeginDrawing()
             rl.ClearBackground(rl.DARKGRAY)
 
-			rl.BeginMode3D(camera)
+			rl.BeginMode3D(UI.camera)
 				rl.DrawGrid(1000, 1000)
 
 				rl.DrawLine3D({0, 0, 0}, {3000, 0, 0}, rl.RED)
@@ -140,8 +140,9 @@ main :: proc() {
 					assert(err == .None)
 					rl.DrawModel(model^, 0, 1, rl.WHITE)
 				}
-
 			rl.EndMode3D()
+
+			ui.draw(UI, ECS)
 
 			rl.DrawFPS(10, 10)
 
