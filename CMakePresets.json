@@ -1,0 +1,54 @@
+{
+	"version": 8,
+
+	"configurePresets": [
+		{
+			"name": "homeworld",
+			"generator": "Ninja",
+			"binaryDir": "${sourceDir}/.build",
+			"cacheVariables": {
+				"HOOTOOLS_FBX2GLTF_ENABLE":				{ "value": "TRUE" },
+				"HOOTOOLS_RAYLIBTECH_ENABLE":			{ "value": "TRUE" },
+				"HOOTOOLS_ODIN_ENABLE":					{ "value": "TRUE" },
+				"HOOTOOLS_ODIN_DEBUG":					{ "value": "TRUE" },
+				"HOOTOOLS_ODIN_USE_EXTERNAL_RAYLIB":	{ "value": "TRUE" }
+			}
+		}
+	],
+
+	"buildPresets": [
+		{
+			"name": "homeworld",
+			"configurePreset": "homeworld",
+			"targets": [ "rayngine" ]
+		}
+	],
+
+	"testPresets": [
+		{
+			"name": "homeworld",
+			"configurePreset": "homeworld",
+			"output": { "outputOnFailure": true }
+		}
+	],
+
+	"workflowPresets": [
+		{
+			"name": "homeworld-build",
+			"steps": [
+				{ "type": "configure",	"name": "homeworld" },
+				{ "type": "build",		"name": "homeworld" }
+			]
+		},
+		{
+			"name": "homeworld-full",
+			"steps": [
+				{ "type": "configure",	"name": "homeworld" },
+				{ "type": "build",		"name": "homeworld" },
+				{ "type": "test",		"name": "homeworld" }
+			]
+		}
+	]
+
+}
+

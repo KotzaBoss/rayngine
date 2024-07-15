@@ -9,8 +9,8 @@
 ```shell
 git clone https://github.com/KotzaBoss/rayngine.git
 cd rayngine
-cmake -Bbuild
-cmake --build build -- rayngine && ./build/bin/rayngine
+
+cmake --workflow --preset=homeworld-build && ./.build/bin/rayngine
 ```
 
 See [[#NixOS]] for details about that particular distribution.
