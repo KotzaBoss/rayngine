@@ -1,9 +1,5 @@
 # rayngine
 
-> [!tip] Stuck?
-> ```
-> cmake --build build -- h
-> ```
 ## Getting started
 
 ```shell
@@ -13,20 +9,7 @@ cd rayngine
 cmake --workflow --preset=homeworld-build && ./.build/bin/rayngine
 ```
 
-See [[#NixOS]] for details about that particular distribution.
+For details on the presets/workflow see [[/CMakePresets.json]]
+
 ## NixOS
-
-> [!WARNING] **EXPERIMENTAL**
-
-Given it's unique design, you need to setup a shell before working on rayngine. It *should* be as simple as:
-```bash
-nix develop ./nixos
-```
-You can then continue hacking normally.
-
-See [[nixos/README|nixos/README]] for more details.
-### Sauces
-- [Manual](https://nixos.org/manual/nixos/stable/)
-- [Packages](https://search.nixos.org/packages?)
-- `man configuration.nix`
-- [`nix-index`](https://github.com/nix-community/nix-index)
+See [hootools' README](https://github.com/KotzaBoss/hootools/blob/master/README.md#nixos) for details about that particular distribution.
