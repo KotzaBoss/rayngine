@@ -1,1 +1,1 @@
-- [ ] Use `hootools`' `add_odin_tests()`
+- [x] Use `hootools`' `add_odin_tests()` ✅ 2024-07-15
