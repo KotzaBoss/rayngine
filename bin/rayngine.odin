@@ -135,10 +135,10 @@ main :: proc() {
 				rl.DrawLine3D({0, 0, 0}, {0, 3000, 0}, rl.GREEN)
 				rl.DrawLine3D({0, 0, 0}, {0, 0, 3000}, rl.BLUE)
 
-				for e in entities {
-					model, err := ecs.component(ECS, e, rl.Model)
-					assert(err == .None)
-					rl.DrawModel(model^, 0, 1, rl.WHITE)
+				ms, err := ecs.components(ECS, rl.Model)
+				assert(err == .None)
+				for m in ms  {
+					rl.DrawModel(m, 0, 1, rl.WHITE)
 				}
 			rl.EndMode3D()
 
