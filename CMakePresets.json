@@ -7,11 +7,11 @@
 			"generator": "Ninja",
 			"binaryDir": "${sourceDir}/.build",
 			"cacheVariables": {
-				"HOOTOOLS_FBX2GLTF_ENABLE":				{ "value": "TRUE" },
-				"HOOTOOLS_RAYLIBTECH_ENABLE":			{ "value": "TRUE" },
-				"HOOTOOLS_ODIN_ENABLE":					{ "value": "TRUE" },
-				"HOOTOOLS_ODIN_DEBUG":					{ "value": "TRUE" },
-				"HOOTOOLS_ODIN_USE_EXTERNAL_RAYLIB":	{ "value": "TRUE" }
+				"HOOTOOLS_FBX2GLTF_ENABLE":				{ "type": "BOOL", "value": "ON" },
+				"HOOTOOLS_RAYLIBTECH_ENABLE":			{ "type": "BOOL", "value": "ON" },
+				"HOOTOOLS_ODIN_ENABLE":					{ "type": "BOOL", "value": "ON" },
+				"HOOTOOLS_ODIN_DEBUG":					{ "type": "BOOL", "value": "ON" },
+				"HOOTOOLS_ODIN_USE_EXTERNAL_RAYLIB":	{ "type": "BOOL", "value": "ON" }
 			}
 		}
 	],
