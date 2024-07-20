@@ -13,6 +13,8 @@ import rlu "hootools:raylib"
 import rl "vendor:raylib"
 
 import "rayngine:ui/mouse"
+import "rayngine:ui/focus"
+
 import "hootools:ecs"
 import "hootools:game"
 
@@ -22,7 +24,8 @@ import "core:log"
 UI :: struct {
 	camera: rl.Camera,
 	mouse: mouse.Mouse,
-	selection: [dynamic]ecs.Entity,
+	pending_selection: [dynamic]game.Transform,
+	active_units, focus: focus.Focus,
 }
 
 make :: proc(c: rl.Camera) -> UI {
@@ -40,64 +43,90 @@ update :: proc(ui: ^UI, ECS: ecs.ECS) {
 	mouse.update(&ui.mouse, ui.camera)
 
 	// Selection
-	//
-	// As long as ui.mouse has selection it means we are "pending" selection.
-	// Once we release the left click, ui.mouse has no selection and selection is "confirmed".
-	// Later when drawing, we visualize this with two different colors, eg,
-	// blue pending, green confirmed.
+	// Per frame clear and repopulate the pending selection. When we release the left mouse button
+	// copy the pending transforms to either camera focus or active units if we press left alt or not respectively.
 	{{
-		// Collect
-		selection := &ui.selection
-		entities := ecs.entities(ECS)
+		selection := rl.IsKeyDown(.LEFT_ALT)	\
+			? &ui.focus	\
+			: &ui.active_units
 
+		// Collect
 		switch s in ui.mouse.selection {
 			case rl.Rectangle:
-				clear(selection)
-				// TODO: Make it a bit more sophisticated when things start to get settled
-				for e, i in entities {
-					transform, err := ecs.component(ECS, e, game.Transform)
-					assert(err == .None)
+				clear(&ui.pending_selection)
 
-					screen_pos := rl.GetWorldToScreen(transform.translation, ui.camera)
+				transforms, err := ecs.components(ECS, game.Transform)
+				assert(err == .None)
+
+				// If transform in selection rectangle
+				for t, i in transforms {
+					screen_pos := rl.GetWorldToScreen(t.translation, ui.camera)
 					if rl.CheckCollisionPointRec(screen_pos, s) {
-						append(selection, entities[i])
+						append(&ui.pending_selection, t)
 					}
 				}
+
+				if rl.IsMouseButtonReleased(.LEFT) {
+					focus.set(selection, ui.pending_selection[:])
+				}
+
 			case rl.Ray:
-				clear(selection)
-				for &e, i in entities {
-					model, e1 := ecs.component(ECS, e, rl.Model)
-					assert(e1 == .None)
+				clear(&ui.pending_selection)
 
-					transform, e2 := ecs.component(ECS, e, game.Transform)
-					assert(e2 == .None)
+				entities := ecs.entities(ECS)
 
-					if rlu.ray_model_collide(s, model^, game.to_matrix(transform^)) {
-						append(selection, entities[i])
+				// If mouse ray collides with model
+				transforms, errt := ecs.components(ECS, game.Transform)
+				assert(errt == .None)
+
+				models, errm := ecs.components(ECS, rl.Model)
+				assert(errm == .None)
+
+				for zip, i in soa_zip(e=entities, m=models, t=transforms) {
+					if rlu.ray_model_collide(s, zip.m, game.to_matrix(zip.t)) {
+						append(&ui.pending_selection, zip.t)
 						// TODO: Resolve depth
 						break
 					}
 				}
-		}
 
+				if rl.IsMouseButtonReleased(.LEFT) {
+					focus.set(selection, ui.pending_selection[:])
+				}
+
+			case:
+				clear(&ui.pending_selection)
+		}
 	}}
+
 }
 
 draw :: proc(ui: UI, ECS: ecs.ECS) {
 	mouse.draw(ui.mouse, ui.camera)
 
-	confirmed := ui.mouse.selection != nil && rl.IsMouseButtonReleased(.LEFT)
-	for e in ui.selection {
-		transform, err := ecs.component(ECS, e, game.Transform)
-		assert(err == .None)
+	// Selection
+	{{
+		// Pending
+		for t in ui.pending_selection {
+			size :: 70
+			screen_pos := rl.GetWorldToScreen(t.translation, ui.camera)
+			rl.DrawRectangleLines(
+				auto_cast (screen_pos.x - size / 2), auto_cast (screen_pos.y - size / 2),
+				size, size,
+				rl.IsKeyDown(.LEFT_ALT) ? rl.YELLOW : rl.SKYBLUE
+			)
+		}
 
-		screen_pos := rl.GetWorldToScreen(transform.translation, ui.camera)
-		rl.DrawRectangleLines(
-			auto_cast (screen_pos.x - 50 / 2), auto_cast (screen_pos.y - 50 / 2),
-			50, 50,
-			ui.mouse.selection != nil ? rl.SKYBLUE : rl.GREEN
-		)
-	}
+		for t in ui.active_units.transforms {
+			size :: 50
+			screen_pos := rl.GetWorldToScreen(t.translation, ui.camera)
+			rl.DrawRectangleLines(
+				auto_cast (screen_pos.x - size / 2), auto_cast (screen_pos.y - size / 2),
+				size, size,
+				rl.GREEN
+			)
+		}
+	}}
 }
 
 
