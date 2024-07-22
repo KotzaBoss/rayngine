@@ -1,1 +1,1 @@
-- [ ] Make custom camera work for NixOS ⏫ 
+- [x] Make custom camera work for NixOS ⏫ ✅ 2024-07-22 (Wayland is a problem)
