@@ -13,7 +13,7 @@ import rlu "hootools:raylib"
 import rl "vendor:raylib"
 
 import "rayngine:ui/mouse"
-import "rayngine:ui/focus"
+import "rayngine:ui/selection"
 
 import "hootools:ecs"
 import "hootools:game"
@@ -22,23 +22,23 @@ import "core:log"
 
 
 UI :: struct {
-	camera: rl.Camera,
+	camera: game.Camera,
 	mouse: mouse.Mouse,
 	pending_selection: [dynamic]game.Transform,
-	active_units, focus: focus.Focus,
+
+	active_units, focus: selection.Selection,
+	focus_group: ^selection.Selection,
 }
 
 make :: proc(c: rl.Camera) -> UI {
 	return {
-		camera = c,
+		camera = { raylib = c },
 	}
 }
 
 update :: proc(ui: ^UI, ECS: ecs.ECS) {
-	// TODO: Make custom camera
-	if rl.IsMouseButtonDown(.RIGHT) {
-		rl.UpdateCamera(&ui.camera, .FREE)
-	}
+	// TODO: In hootools rename the return from updated to smth like "user moved/interupted"
+	camera_updated := game.update(&ui.camera, move_speed=1, rotate_speed=1, scroll_speed=1)
 	
 	mouse.update(&ui.mouse, ui.camera)
 
@@ -46,7 +46,7 @@ update :: proc(ui: ^UI, ECS: ecs.ECS) {
 	// Per frame clear and repopulate the pending selection. When we release the left mouse button
 	// copy the pending transforms to either camera focus or active units if we press left alt or not respectively.
 	{{
-		selection := rl.IsKeyDown(.LEFT_ALT)	\
+		active_selection := rl.IsKeyDown(.LEFT_ALT)	\
 			? &ui.focus	\
 			: &ui.active_units
 
@@ -67,7 +67,7 @@ update :: proc(ui: ^UI, ECS: ecs.ECS) {
 				}
 
 				if rl.IsMouseButtonReleased(.LEFT) {
-					focus.set(selection, ui.pending_selection[:])
+					selection.set(active_selection, ui.pending_selection[:])
 				}
 
 			case rl.Ray:
@@ -91,7 +91,7 @@ update :: proc(ui: ^UI, ECS: ecs.ECS) {
 				}
 
 				if rl.IsMouseButtonReleased(.LEFT) {
-					focus.set(selection, ui.pending_selection[:])
+					selection.set(active_selection, ui.pending_selection[:])
 				}
 
 			case:
@@ -99,6 +99,22 @@ update :: proc(ui: ^UI, ECS: ecs.ECS) {
 		}
 	}}
 
+	// Focus
+	{{
+		if camera_updated {
+			ui.focus_group = nil
+		}
+		else if rl.IsKeyPressed(.F) {
+			ui.focus_group = &ui.active_units
+		}
+		else if rl.IsMouseButtonReleased(.LEFT) && rl.IsKeyDown(.LEFT_ALT) {
+			ui.focus_group = &ui.focus
+		}
+
+		if ui.focus_group != nil {
+			game.set_focus(&ui.camera, ui.focus_group.centroid)
+		}
+	}}
 }
 
 draw :: proc(ui: UI, ECS: ecs.ECS) {
