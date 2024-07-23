@@ -1,0 +1,1 @@
+- [ ] Add `draw(Selection)` and `draw([]Transforms)` functions. The former calls the latter.
