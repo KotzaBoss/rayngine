@@ -123,7 +123,7 @@ main :: proc() {
 	rl.SetTargetFPS(60)
 
     for !rl.WindowShouldClose() {
-		ui.update(&UI, ECS)
+		move_order_position, move_order_confirmed := ui.update(&UI, ECS)
 
         rl.BeginDrawing()
             rl.ClearBackground(rl.DARKGRAY)

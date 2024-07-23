@@ -23,24 +23,145 @@ import "core:log"
 
 UI :: struct {
 	camera: game.Camera,
+	
 	mouse: mouse.Mouse,
-	pending_selection: [dynamic]game.Transform,
 
+	pending_selection: [dynamic]game.Transform,
 	active_units, focus: selection.Selection,
 	focus_group: ^selection.Selection,
+
+	move_order: Move_Order,
 }
 
-make :: proc(c: rl.Camera) -> UI {
-	return {
-		camera = { raylib = c },
+// TODO: Move to its own file
+Move_Order :: struct {
+	pending: bool,	// TODO: Is this good enough?
+	selection: ^selection.Selection,
+	cursor: rl.Vector3,
+	y_offset: f32,
+}
+
+
+// TODO: Is the camera_rotated_this_frame parameter a good idea?
+@require_results
+update_move_order :: proc(mo: ^Move_Order, camera: game.Camera, camera_rotated_this_frame: bool) -> (order: rl.Vector3, confirmed: bool) {
+	assert(mo.selection != nil)
+
+	if !mo.pending {
+		// TODO: Don't like the len(mo.selection) > 0. I use it in the focusing as well.
+		//       Maybe assert that there are elements so that the caller fixes their logic?
+		if rl.IsMouseButtonReleased(.RIGHT) && len(mo.selection.transforms) > 0 && !camera_rotated_this_frame {
+			// Begin
+			mo.pending = true
+			mo.cursor = rlu.simple_ray_xzplane_collision(rlu.mouse_ray(camera.raylib), mo.selection.centroid.y).point
+		}
+	}
+	else if rl.IsMouseButtonPressed(.LEFT) {
+		// Confirm
+		mo.pending = false
+		confirmed = true
+		order = mo.cursor + {0, mo.y_offset, 0}
+	}
+	else if rl.IsMouseButtonReleased(.RIGHT) && !camera_rotated_this_frame {
+		// Cancel
+		mo.pending = false
+	}
+	else {
+		// Process
+		assert(len(mo.selection.transforms) > 0)
+		
+		if rl.IsKeyDown(.LEFT_SHIFT) {
+			when !#config(HOOTOOLS_ON_WAYLAND, false) {
+				rl.HideCursor()
+				delta := rlu.freeze_mouse()
+			}
+			else {
+				delta := rl.GetMouseDelta()
+			}
+			// Raylibs screen axes are:
+			// ^ -y
+			// |
+			// + - > +x
+			mo.y_offset += -delta.y
+		}
+		else if rl.IsKeyReleased(.LEFT_SHIFT) {
+			when !#config(HOOTOOLS_ON_WAYLAND, false) {
+				rl.ShowCursor()
+			}
+		}
+		
+		c := rlu.simple_ray_xzplane_collision(rlu.mouse_ray(camera.raylib), mo.selection.centroid.y)
+		if c.hit {
+			mo.cursor = c.point
+		}
+	}
+
+	return
+}
+
+draw_move_order :: proc(mo: Move_Order, camera: game.Camera) {
+	assert(mo.selection != nil)
+
+	target_radius :: 1
+
+	draw_line_end :: proc(translation: rl.Vector3, target: rl.Vector3) -> rl.Vector3 {
+		// TODO: If target is over or under translation, the end must still be on the circle.
+		//         +----
+		//        /
+		//  \    /
+		//  ===> - - - +----
+		//       \
+		//        \
+		//         +----
+		dir := linalg.normalize(target - translation)
+		length := linalg.distance(translation, target) - target_radius
+		return translation + dir * length
+	}
+
+	// Draw pending move order
+	if mo.pending {
+		target := mo.cursor + {0, mo.y_offset, 0}
+	
+		// Draw y_offset next to target
+		y_offset_pos := rl.GetWorldToScreen(target, camera.raylib)
+		rl.DrawText(rl.TextFormat("%+f", mo.y_offset), auto_cast y_offset_pos.x, auto_cast y_offset_pos.y, 30, rl.RED)
+	
+				// Draw ui to cursor
+	
+		rl.BeginMode3D(camera.raylib)
+	
+		to_target := mo.cursor - mo.selection.centroid
+		projection_len := linalg.length(rl.Vector3{1, 0, 1} * to_target)
+	
+		rl.DrawCircle3D(mo.selection.centroid, projection_len, {1, 0, 0}, 90, rl.RED)
+		rl.DrawLine3D(mo.selection.centroid, draw_line_end(mo.selection.centroid, mo.cursor), rl.YELLOW)
+		rl.DrawCircle3D(mo.cursor, target_radius, {1, 0, 0}, 90, rl.RED)
+	
+				// Draw ui to target
+	
+		rl.DrawLine3D(mo.selection.centroid, draw_line_end(mo.selection.centroid, target), rl.RED)
+		rl.DrawLine3D(mo.cursor, target, rl.RED)
+		rl.DrawCircle3D(target, target_radius, {1, 0, 0}, 90, rl.RED)
+	
+		rl.EndMode3D()
 	}
 }
 
-update :: proc(ui: ^UI, ECS: ecs.ECS) {
+make :: proc(c: rl.Camera) -> (ui: UI) {
+	ui.camera = { raylib = c }
+	//ui.move_order.selection = &ui.active_units
+
+	return
+}
+
+@require_results
+update :: proc(ui: ^UI, ECS: ecs.ECS) -> (move_order_position: rl.Vector3, move_order_confirmed: bool) {
 	// TODO: In hootools rename the return from updated to smth like "user moved/interupted"
-	camera_updated := game.update(&ui.camera, move_speed=1, rotate_speed=1, scroll_speed=1)
-	
-	mouse.update(&ui.mouse, ui.camera)
+	camera_moved, camera_rotated := game.update(&ui.camera, move_speed=1, rotate_speed=1, scroll_speed=1)
+
+	if !ui.move_order.pending {
+		mouse.update(&ui.mouse, ui.camera)
+	}
 
 	// Selection
 	// Per frame clear and repopulate the pending selection. When we release the left mouse button
@@ -101,7 +222,7 @@ update :: proc(ui: ^UI, ECS: ecs.ECS) {
 
 	// Focus
 	{{
-		if camera_updated {
+		if camera_moved {
 			ui.focus_group = nil
 		}
 		else if rl.IsKeyPressed(.F) {
@@ -115,12 +236,23 @@ update :: proc(ui: ^UI, ECS: ecs.ECS) {
 			game.set_focus(&ui.camera, ui.focus_group.centroid)
 		}
 	}}
+
+	// Move Order
+	{{
+		// TODO: Should be done once when we make the UI.
+		//       Why the fuck does it work when this line of code is executed every frame and not just in the beginning?????
+		ui.move_order.selection = &ui.active_units
+		move_order_position, move_order_confirmed = update_move_order(&ui.move_order, ui.camera, camera_rotated)
+	}}
+
+	return
 }
 
 draw :: proc(ui: UI, ECS: ecs.ECS) {
 	mouse.draw(ui.mouse, ui.camera)
 
 	// Selection
+	// TODO: Make draw(Selection), draw([]Transforms) functions 
 	{{
 		// Pending
 		for t in ui.pending_selection {
@@ -143,6 +275,8 @@ draw :: proc(ui: UI, ECS: ecs.ECS) {
 			)
 		}
 	}}
+
+	draw_move_order(ui.move_order, ui.camera)
 }
 
 
@@ -414,6 +548,13 @@ draw :: proc(ui: UI, ECS: ecs.ECS) {
 //	return { linalg.distance(bb.max, bb.min) }
 //}
 //
+//
+// Below DONE
+//////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////
+//////////////////////////////////////////////////////////////////////////////////////////
 //
 //Mouse :: struct {
 //	selection: union{ rl.Rectangle, rl.Ray },
