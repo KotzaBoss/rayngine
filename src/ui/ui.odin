@@ -111,7 +111,7 @@ update :: proc(ui: ^UI, ECS: ecs.ECS) {
 			ui.focus_group = &ui.focus
 		}
 
-		if ui.focus_group != nil {
+		if ui.focus_group != nil && len(ui.focus_group.transforms) > 0 {
 			game.set_focus(&ui.camera, ui.focus_group.centroid)
 		}
 	}}
